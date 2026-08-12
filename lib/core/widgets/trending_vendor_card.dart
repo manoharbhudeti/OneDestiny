@@ -49,7 +49,7 @@ class TrendingVendorCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   child: SizedBox(
-                    height: 160,
+                    height: 130,
                     width: double.infinity,
                     child: Image.network(
                       vendor.imageUrl,
@@ -88,29 +88,29 @@ class TrendingVendorCard extends StatelessWidget {
 
                 // Category Tag Badge
                 Positioned(
-                  top: 12,
-                  left: 12,
+                  top: 10,
+                  left: 10,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: primaryColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       vendor.category.toUpperCase(),
                       style: AppTypography.buttonText(context).copyWith(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ),
 
-                // Rating Badge
+                // Rating & Review Count Badge
                 Positioned(
-                  top: 12,
-                  right: 12,
+                  top: 10,
+                  right: 10,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -122,14 +122,14 @@ class TrendingVendorCard extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.star_rounded,
-                          size: 14,
+                          size: 13,
                           color: AppColors.accentGold,
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          vendor.rating.toStringAsFixed(1),
+                          '${vendor.rating.toStringAsFixed(1)} (120+)',
                           style: AppTypography.description(context).copyWith(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -142,51 +142,64 @@ class TrendingVendorCard extends StatelessWidget {
 
             // Bottom Details & Book Now Action
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          vendor.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.subtitle(context).copyWith(
-                            fontSize: 16,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                vendor.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.subtitle(context).copyWith(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 15,
+                              color: AppColors.accentGold,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           vendor.formattedPrice,
                           style: AppTypography.subtitle(
                             context,
                             customColor: primaryColor,
                           ).copyWith(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: onBookNowTap ?? onTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     child: Text(
                       'Book Now',
                       style: AppTypography.buttonText(context).copyWith(
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ),

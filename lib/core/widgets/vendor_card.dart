@@ -44,10 +44,17 @@ class _VendorCardState extends State<VendorCard> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant VendorCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.vendor.isFavorite != widget.vendor.isFavorite) {
+      _isFavorite = widget.vendor.isFavorite;
+    }
+  }
+
   void _toggleFavorite() {
     setState(() {
       _isFavorite = !_isFavorite;
-      widget.vendor.isFavorite = _isFavorite;
     });
 
     if (_isFavorite) {

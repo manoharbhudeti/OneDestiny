@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../../core/data/mock_data.dart';
+
+import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/vendor_card.dart';
+import '../../vendor_detail/views/vendor_detail_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final appState = AppStateScope.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final favoriteVendors = MockData.nearbyVendors.where((v) => v.isFavorite).toList();
+    final favoriteVendors = appState.favoriteVendors;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -31,10 +34,7 @@ class FavoritesScreen extends StatelessWidget {
                       color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'No saved vendors yet',
-                      style: AppTypography.subtitle(context),
-                    ),
+                    Text('No saved vendors yet', style: AppTypography.subtitle(context)),
                   ],
                 ),
               )
@@ -51,7 +51,14 @@ class FavoritesScreen extends StatelessWidget {
                   final vendor = favoriteVendors[index];
                   return VendorCard(
                     vendor: vendor,
-                    onTap: () {},
+                    onFavoriteToggle: (_) => AppStateScope.read(context).toggleFavorite(vendor.id),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => VendorDetailScreen(vendor: vendor),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

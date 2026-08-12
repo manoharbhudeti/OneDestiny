@@ -12,6 +12,9 @@ class LuxuryHeader extends StatefulWidget {
   final VoidCallback? onProfileTap;
   final ValueChanged<int>? onNavigateToTab;
   final ValueChanged<LocationResult>? onLocationChanged;
+  final int bookingCount;
+  final int activeChatCount;
+  final int savedVendorCount;
 
   const LuxuryHeader({
     super.key,
@@ -22,6 +25,9 @@ class LuxuryHeader extends StatefulWidget {
     this.onProfileTap,
     this.onNavigateToTab,
     this.onLocationChanged,
+    this.bookingCount = 0,
+    this.activeChatCount = 0,
+    this.savedVendorCount = 0,
   });
 
   @override
@@ -58,6 +64,14 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
   void dispose() {
     _expandController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant LuxuryHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) {
+      _activeLocation = widget.location;
+    }
   }
 
   void _toggleExpansion() {
@@ -124,99 +138,138 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Brand Bar: Gold Logo on Top Left, Actions on Right
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Top Brand Bar: Gold Logo on Top Left, Actions on Right
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Dynamic Responsive Top-Left Logo (Prominent Compact Luxury Sizing)
-                    Flexible(
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: (MediaQuery.of(context).size.width * 0.65).clamp(160.0, 280.0),
-                          maxHeight: 64,
-                        ),
-                        child: Image.asset(
-                          'assets/images/one_destiny_logo_transparent.png',
-                          height: 60,
-                          alignment: Alignment.centerLeft,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                          errorBuilder: (context, error, stackTrace) => Image.asset(
-                            'assets/images/one_destiny_logo.png',
-                            height: 60,
-                            alignment: Alignment.centerLeft,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                          ),
-                        ),
+                // Dynamic Responsive Top-Left Logo (Prominent Compact Luxury Sizing)
+                Flexible(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: (MediaQuery.of(context).size.width * 0.60).clamp(150.0, 240.0),
+                      maxHeight: 48,
+                    ),
+                    child: Image.asset(
+                      'assets/images/one_destiny_logo_transparent.png',
+                      height: 44,
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                        'assets/images/one_destiny_logo.png',
+                        height: 44,
+                        alignment: Alignment.centerLeft,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
+                  ),
+                ),
 
-                    // Actions Row (Theme Toggle & Profile Avatar)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                // Actions Row (Notifications Bell, Theme Toggle & Profile Avatar)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Notification Bell Icon with Badge Indicator
+                    Stack(
                       children: [
                         IconButton(
-                          onPressed: widget.onThemeToggle,
-                          icon: Icon(
-                            isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Notifications: 3 new event updates'),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.notifications_outlined,
                             color: AppColors.accentGold,
-                            size: 22,
+                            size: 21,
                           ),
-                          tooltip: 'Toggle Theme',
+                          tooltip: 'Notifications',
                         ),
-                        const SizedBox(width: 4),
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 6),
 
-                        // Interactive Profile Avatar with Hero Animation & Ripple Feedback
-                        GestureDetector(
-                          onTapDown: (_) => setState(() => _isAvatarPressed = true),
-                          onTapUp: (_) => setState(() => _isAvatarPressed = false),
-                          onTapCancel: () => setState(() => _isAvatarPressed = false),
-                          child: AnimatedScale(
-                            scale: _isAvatarPressed ? 0.92 : 1.0,
-                            duration: const Duration(milliseconds: 150),
-                            child: Hero(
-                              tag: 'user-avatar',
-                              child: Material(
-                                color: Colors.transparent,
-                                shape: const CircleBorder(),
-                                clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  onTap: widget.onProfileTap,
-                                  customBorder: const CircleBorder(),
-                                  child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.accentGold,
-                                        width: 1.8,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.25),
-                                          blurRadius: 5,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
+                    IconButton(
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                      onPressed: widget.onThemeToggle,
+                      icon: Icon(
+                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        color: AppColors.accentGold,
+                        size: 20,
+                      ),
+                      tooltip: 'Toggle Theme',
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Interactive Profile Avatar with Hero Animation & Ripple Feedback
+                    GestureDetector(
+                      onTapDown: (_) => setState(() => _isAvatarPressed = true),
+                      onTapUp: (_) => setState(() => _isAvatarPressed = false),
+                      onTapCancel: () => setState(() => _isAvatarPressed = false),
+                      child: AnimatedScale(
+                        scale: _isAvatarPressed ? 0.92 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Hero(
+                          tag: 'user-avatar',
+                          child: Material(
+                            color: Colors.transparent,
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: widget.onProfileTap,
+                              customBorder: const CircleBorder(),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.accentGold,
+                                    width: 1.6,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    child: ClipOval(
-                                      child: Image.network(
-                                        widget.avatarUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
-                                          backgroundColor: Colors.white24,
-                                          child: Icon(Icons.person_outline, color: Colors.white),
-                                        ),
-                                      ),
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    widget.avatarUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+                                      backgroundColor: Colors.white24,
+                                      child: Icon(Icons.person_outline, color: Colors.white, size: 18),
                                     ),
                                   ),
                                 ),
@@ -224,10 +277,12 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
+              ],
+            ),
 
                 const SizedBox(height: 2),
 
@@ -369,7 +424,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                               children: [
                                 _buildStatCard(
                                   context,
-                                  count: '2',
+                                  count: '${widget.bookingCount}',
                                   label: 'Bookings',
                                   icon: Icons.event_available_rounded,
                                   onTap: () {
@@ -382,7 +437,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                                 const SizedBox(width: 10),
                                 _buildStatCard(
                                   context,
-                                  count: '3',
+                                  count: '${widget.activeChatCount}',
                                   label: 'Active Chats',
                                   icon: Icons.mark_chat_unread_rounded,
                                   onTap: () {
@@ -395,70 +450,12 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                                 const SizedBox(width: 10),
                                 _buildStatCard(
                                   context,
-                                  count: '12',
+                                  count: '${widget.savedVendorCount}',
                                   label: 'Saved Vendors',
                                   icon: Icons.favorite_rounded,
                                   onTap: () {},
                                 ),
                               ],
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            // Quick Shortcuts Row
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildShortcutItem(
-                                    context,
-                                    icon: Icons.calendar_today_rounded,
-                                    label: 'Events',
-                                    onTap: () {
-                                      if (widget.onNavigateToTab != null) {
-                                        widget.onNavigateToTab!(2);
-                                        _toggleExpansion();
-                                      }
-                                    },
-                                  ),
-                                  _buildShortcutItem(
-                                    context,
-                                    icon: Icons.support_agent_rounded,
-                                    label: 'Concierge',
-                                    onTap: () {
-                                      if (widget.onNavigateToTab != null) {
-                                        widget.onNavigateToTab!(3);
-                                        _toggleExpansion();
-                                      }
-                                    },
-                                  ),
-                                  _buildShortcutItem(
-                                    context,
-                                    icon: Icons.card_giftcard_rounded,
-                                    label: 'Rewards',
-                                    onTap: () {},
-                                  ),
-                                  _buildShortcutItem(
-                                    context,
-                                    icon: Icons.settings_rounded,
-                                    label: 'Settings',
-                                    onTap: () {
-                                      if (widget.onProfileTap != null) {
-                                        widget.onProfileTap!();
-                                        _toggleExpansion();
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
                             ),
                           ],
                         )
@@ -528,34 +525,6 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
       ),
     );
   }
-
-  Widget _buildShortcutItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          children: [
-            Icon(icon, size: 18, color: AppColors.accentGold),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTypography.description(context, customColor: Colors.white).copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// Subtle Gold Vector Line Art Painter (Rings, Vines, Mandalas)
@@ -592,4 +561,3 @@ class GoldLineArtPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

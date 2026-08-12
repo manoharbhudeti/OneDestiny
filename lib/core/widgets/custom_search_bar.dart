@@ -49,74 +49,74 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.fastOutSlowIn,
-      height: 56,
+      height: 44,
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _isFocused ? AppColors.accentGold : unselectedBorder,
-          width: _isFocused ? 1.8 : 1.0,
+          width: _isFocused ? 1.5 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
             color: _isFocused
                 ? AppColors.accentGold.withValues(alpha: 0.18)
                 : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: _isFocused ? 10 : 5,
-            offset: const Offset(0, 3),
+            blurRadius: _isFocused ? 8 : 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           AnimatedScale(
             duration: const Duration(milliseconds: 200),
             scale: _isFocused ? 1.1 : 1.0,
             child: Icon(
               Icons.search_rounded,
               color: _isFocused ? primaryColor : iconColor,
-              size: 22,
+              size: 19,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               focusNode: _focusNode,
               controller: widget.controller,
               onChanged: widget.onChanged,
-              style: AppTypography.description(context),
+              style: AppTypography.description(context).copyWith(fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Search vendors, photographers, decorators...',
-                hintStyle: AppTypography.description(context, isSecondary: true),
+                hintStyle: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
               onTap: widget.onFilterTap,
               child: Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.tune_rounded,
                   color: primaryColor,
-                  size: 20,
+                  size: 18,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
         ],
       ),
     );

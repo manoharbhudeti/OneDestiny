@@ -134,7 +134,7 @@ class _AddCardsCarouselState extends State<AddCardsCarousel> {
           onPointerUp: (_) => _onUserInteractionEnd(),
           onPointerCancel: (_) => _onUserInteractionEnd(),
           child: SizedBox(
-            height: 175,
+            height: 185,
             child: PageView.builder(
               controller: _pageController,
               physics: const BouncingScrollPhysics(),

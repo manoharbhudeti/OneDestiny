@@ -8,9 +8,9 @@ class VendorModel {
   final String location;
   final String imageUrl;
   final bool isTrending;
-  bool isFavorite;
+  final bool isFavorite;
 
-  VendorModel({
+  const VendorModel({
     required this.id,
     required this.name,
     required this.category,
@@ -22,6 +22,32 @@ class VendorModel {
     this.isTrending = false,
     this.isFavorite = false,
   });
+
+  VendorModel copyWith({
+    String? id,
+    String? name,
+    String? category,
+    double? rating,
+    double? distanceKm,
+    double? startingPrice,
+    String? location,
+    String? imageUrl,
+    bool? isTrending,
+    bool? isFavorite,
+  }) {
+    return VendorModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      rating: rating ?? this.rating,
+      distanceKm: distanceKm ?? this.distanceKm,
+      startingPrice: startingPrice ?? this.startingPrice,
+      location: location ?? this.location,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isTrending: isTrending ?? this.isTrending,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
 
   String get formattedPrice {
     final priceString = startingPrice.toInt().toString();

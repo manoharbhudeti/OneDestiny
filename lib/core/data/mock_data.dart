@@ -105,7 +105,7 @@ class MockData {
     ),
   ];
 
-  static List<VendorModel> nearbyVendors = [
+  static const List<VendorModel> nearbyVendors = [
     VendorModel(
       id: 'v_1',
       name: 'Lens & Light Studio',
@@ -169,7 +169,7 @@ class MockData {
     ),
   ];
 
-  static List<VendorModel> trendingVendors = [
+  static const List<VendorModel> trendingVendors = [
     VendorModel(
       id: 'tv_1',
       name: 'Destiny Grand Wedding Planners',

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../core/data/mock_data.dart';
-import '../../../core/models/vendor_model.dart';
+
+import '../../../core/models/category_model.dart';
+import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/add_cards_carousel.dart';
 import '../../../core/widgets/category_chip.dart';
 import '../../../core/widgets/custom_search_bar.dart';
 import '../../../core/widgets/luxury_header.dart';
 import '../../../core/widgets/popular_service_card.dart';
 import '../../../core/widgets/trending_vendor_card.dart';
-import '../../../core/widgets/add_cards_carousel.dart';
+import '../../vendor_detail/views/vendor_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -28,29 +30,17 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   @override
   bool get wantKeepAlive => true;
 
-  String _selectedCategoryId = 'cat_1'; // Default: Photography
-  String _searchQuery = '';
-
-  void _onCategorySelected(String categoryId) {
-    setState(() {
-      _selectedCategoryId = categoryId;
-    });
-  }
-
-  List<VendorModel> get _filteredTrendingVendors {
-    if (_searchQuery.isEmpty) return MockData.trendingVendors;
-    return MockData.trendingVendors.where((v) {
-      return v.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          v.category.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final appState = AppStateScope.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final displayTrendingVendors = _filteredTrendingVendors;
+    final displayVendors = appState.filteredTrendingVendors;
+    final categories = [
+      const CategoryModel(id: 'all', title: 'All', icon: Icons.apps_rounded),
+      ...appState.categories,
+    ];
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -61,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // LUXURY BRANDED HEADER WITH GOLD LINE ART
               LuxuryHeader(
-                greeting: 'Hello, Manohar 👋',
-                location: 'Hyderabad, India',
+                greeting: appState.greeting,
+                location: appState.activeLocation,
+                avatarUrl: appState.profile.avatarUrl,
                 onThemeToggle: () {
                   widget.themeModeNotifier.value =
                       isDark ? ThemeMode.light : ThemeMode.dark;
@@ -73,19 +63,18 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                   widget.onNavigateToTab?.call(4);
                 },
                 onNavigateToTab: widget.onNavigateToTab,
+                onLocationChanged: appState.updateLocation,
+                bookingCount: appState.bookings.length,
+                activeChatCount: appState.conversationCount,
+                savedVendorCount: appState.favoriteVendors.length,
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // SEARCH BAR
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: CustomSearchBar(
-                  onChanged: (query) {
-                    setState(() {
-                      _searchQuery = query;
-                    });
-                  },
+                  onChanged: appState.updateHomeSearch,
                   onFilterTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -99,37 +88,35 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // CATEGORIES SECTION
               SizedBox(
-                height: 96,
+                height: 94,
                 child: ListView.separated(
                   physics: const BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: MockData.categories.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 14),
+                  itemCount: categories.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
-                    final cat = MockData.categories[index];
+                    final cat = categories[index];
                     return CategoryChip(
                       category: cat,
-                      isSelected: cat.id == _selectedCategoryId,
-                      onTap: () => _onCategorySelected(cat.id),
+                      isSelected: cat.id == appState.homeSelectedCategoryId,
+                      onTap: () => appState.selectHomeCategory(cat.id),
                     );
                   },
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // ADD CARDS SECTION (SINGLE LARGE CARD AUTOMATIC CAROUSEL + DOTS)
               AddCardsCarousel(
-                cards: MockData.flashCards,
+                cards: appState.flashCards,
                 autoScrollInterval: const Duration(milliseconds: 1800),
                 onCardTap: (card) {
                   if (card.targetCategoryId != null) {
-                    _onCategorySelected(card.targetCategoryId!);
+                    appState.selectHomeCategory(card.targetCategoryId!);
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -142,32 +129,31 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // POPULAR SERVICES SECTION
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Popular Services',
                   style: AppTypography.subtitle(context).copyWith(
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               SizedBox(
-                height: 110,
+                height: 106,
                 child: ListView.separated(
                   physics: const BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: MockData.popularServices.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 14),
+                  itemCount: appState.popularServices.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
-                    final service = MockData.popularServices[index];
+                    final service = appState.popularServices[index];
                     return PopularServiceCard(
                       service: service,
                       onTap: () {
@@ -185,25 +171,29 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 22),
 
-              // TRENDING VENDORS SECTION
+              // Compact Top Vendors Section with Ratings & Verified Badges
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Trending Vendors',
-                        style: AppTypography.subtitle(context).copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                    Row(
+                      children: [
+                        Text(
+                          'Top Vendors',
+                          style: AppTypography.subtitle(context).copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.verified_rounded, color: AppColors.accentGold, size: 16),
+                      ],
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => widget.onNavigateToTab?.call(1),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
@@ -216,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                           customColor: primaryColor,
                         ).copyWith(
                           fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -223,20 +214,28 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: displayTrendingVendors.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemCount: displayVendors.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
-                    final vendor = displayTrendingVendors[index];
+                    final vendor = displayVendors[index];
                     return TrendingVendorCard(
                       vendor: vendor,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => VendorDetailScreen(vendor: vendor),
+                          ),
+                        );
+                      },
                       onBookNowTap: () {
+                        AppStateScope.read(context).createBookingForVendor(vendor);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Booking requested for ${vendor.name}', style: AppTypography.description(context)),
