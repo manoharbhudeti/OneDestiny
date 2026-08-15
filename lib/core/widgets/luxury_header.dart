@@ -36,36 +36,14 @@ class LuxuryHeader extends StatefulWidget {
   State<LuxuryHeader> createState() => _LuxuryHeaderState();
 }
 
-class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
+class _LuxuryHeaderState extends State<LuxuryHeader> {
   bool _isAvatarPressed = false;
-  bool _isGreetingPressed = false;
   late String _activeLocation;
-
-  late final AnimationController _expandController;
-  late final Animation<double> _iconTurns;
 
   @override
   void initState() {
     super.initState();
     _activeLocation = widget.location;
-    _expandController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _iconTurns = Tween<double>(begin: 0.0, end: 0.5).animate(
-      CurvedAnimation(
-        parent: _expandController,
-        curve: Curves.fastOutSlowIn,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _expandController.dispose();
-    super.dispose();
   }
 
   @override
@@ -74,17 +52,6 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
     if (oldWidget.location != widget.location) {
       _activeLocation = widget.location;
     }
-  }
-
-  void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _expandController.forward();
-      } else {
-        _expandController.reverse();
-      }
-    });
   }
 
   void _openLocationPicker() {
@@ -177,33 +144,17 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 InkWell(
-                                  onTap: _toggleExpansion,
+                                  onTap: widget.onProfileTap,
                                   borderRadius: BorderRadius.circular(6),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          widget.greeting,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.1,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      RotationTransition(
-                                        turns: _iconTurns,
-                                        child: const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: AppColors.accentGold,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    widget.greeting,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.heading(context, customColor: Colors.white).copyWith(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.1,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -250,7 +201,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
 
                     const SizedBox(width: 8),
 
-                    // Actions Row: Notifications Bell (Moved right), Dynamic Animated Theme Toggle & Profile Avatar
+                    // Actions Row: Notifications Bell, Dynamic Animated Theme Toggle & Profile Avatar
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -355,233 +306,10 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 2),
-
-                // Expandable Greeting Section Below Brand Bar
-                Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    onTap: _toggleExpansion,
-                    onHighlightChanged: (isHighlighted) {
-                      setState(() => _isGreetingPressed = isHighlighted);
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: AnimatedScale(
-                      scale: _isGreetingPressed ? 0.98 : 1.0,
-                      duration: const Duration(milliseconds: 150),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          widget.greeting,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.2,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      RotationTransition(
-                                        turns: _iconTurns,
-                                        child: const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: AppColors.accentGold,
-                                          size: 22,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  InkWell(
-                                    onTap: _openLocationPicker,
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on_rounded,
-                                            size: 14,
-                                            color: AppColors.accentGold,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              _activeLocation,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: AppTypography.description(
-                                                context,
-                                                customColor: Colors.white.withValues(alpha: 0.85),
-                                              ).copyWith(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                          const Icon(
-                                            Icons.arrow_drop_down_rounded,
-                                            color: AppColors.accentGold,
-                                            size: 18,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // EXPANDABLE USER INFORMATION PANEL
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Curves.fastOutSlowIn,
-                  alignment: Alignment.topCenter,
-                  child: _isExpanded
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 16),
-                            Divider(
-                              color: AppColors.accentGold.withValues(alpha: 0.3),
-                              height: 1,
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Welcome Back Banner
-                            Text(
-                              'Welcome back, Manohar!',
-                              style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            // Stats Counter Cards
-                            Row(
-                              children: [
-                                _buildStatCard(
-                                  context,
-                                  count: '${widget.bookingCount}',
-                                  label: 'Bookings',
-                                  icon: Icons.event_available_rounded,
-                                  onTap: () {
-                                    if (widget.onNavigateToTab != null) {
-                                      widget.onNavigateToTab!(2);
-                                      _toggleExpansion();
-                                    }
-                                  },
-                                ),
-                                const SizedBox(width: 10),
-                                _buildStatCard(
-                                  context,
-                                  count: '${widget.activeChatCount}',
-                                  label: 'Active Chats',
-                                  icon: Icons.mark_chat_unread_rounded,
-                                  onTap: () {
-                                    if (widget.onNavigateToTab != null) {
-                                      widget.onNavigateToTab!(3);
-                                      _toggleExpansion();
-                                    }
-                                  },
-                                ),
-                                const SizedBox(width: 10),
-                                _buildStatCard(
-                                  context,
-                                  count: '${widget.savedVendorCount}',
-                                  label: 'Saved Vendors',
-                                  icon: Icons.favorite_rounded,
-                                  onTap: () {},
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context, {
-    required String count,
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, size: 14, color: AppColors.accentGold),
-                    const SizedBox(width: 4),
-                    Text(
-                      count,
-                      style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.description(context, customColor: Colors.white.withValues(alpha: 0.8)).copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

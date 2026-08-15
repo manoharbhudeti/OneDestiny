@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/models/category_model.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/add_cards_carousel.dart';
-import '../../../core/widgets/category_chip.dart';
 import '../../../core/widgets/custom_search_bar.dart';
 import '../../../core/widgets/luxury_header.dart';
 import '../../../core/widgets/popular_service_card.dart';
@@ -37,10 +35,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final displayVendors = appState.filteredTrendingVendors;
-    final categories = [
-      const CategoryModel(id: 'all', title: 'All', icon: Icons.apps_rounded),
-      ...appState.categories,
-    ];
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -83,27 +77,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                height: 94,
-                child: ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: categories.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    return CategoryChip(
-                      category: cat,
-                      isSelected: cat.id == appState.homeSelectedCategoryId,
-                      onTap: () => appState.selectHomeCategory(cat.id),
                     );
                   },
                 ),
