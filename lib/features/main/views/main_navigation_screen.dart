@@ -76,15 +76,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
 
-    // Footer background matches the header burgundy color
-    final navBgColor = isDark ? AppColors.darkSurface : primaryColor;
-    final pillColor = isDark ? AppColors.primaryBurgundy : AppColors.darkBurgundy;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.accentGold.withValues(alpha: 0.4);
+    // Footer background: pitch dark surface in dark mode, burgundy in light mode
+    final navBgColor = isDark ? AppColors.darkSurface : AppColors.primaryBurgundy;
+    // Footer active indicator pill: Gold/Yellow in dark mode, Dark Burgundy in light mode
+    final pillColor = isDark ? AppColors.accentGold : AppColors.darkBurgundy;
+    final borderColor = isDark ? AppColors.accentGold.withValues(alpha: 0.4) : AppColors.accentGold.withValues(alpha: 0.4);
     
-    // Selected icon and label are gold
-    const activeColor = AppColors.accentGold;
+    // Active icon color: Pitch Dark in dark mode (on gold pill), Gold in light mode (on dark burgundy pill)
+    final activeColor = isDark ? const Color(0xFF0A0A0A) : AppColors.accentGold;
     final unselectedColor = Colors.white.withValues(alpha: 0.65);
 
     return Scaffold(

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Luxury Burgundy Theme System (Default Palette)
+  // Centralized Primary Palette (Default: Luxury Burgundy & Gold)
   static const Color primaryBurgundy = Color(0xFF6B1028);
   static const Color darkBurgundy = Color(0xFF4A081C);
-  static const Color accentGold = Color(0xFFC9A227);
-  static const Color accentGoldLight = Color(0xFFE5C158);
+  static const Color accentGold = Color(0xFFD4AF37);
+  static const Color accentGoldLight = Color(0xFFF3E5AB);
   
   // Theme Color Aliases
   static const Color lightPrimary = primaryBurgundy;
-  static const Color darkPrimary = darkPrimaryBurgundy;
-  static const Color lightAccent = Color(0xFF2563EB);
-  static const Color darkAccent = Color(0xFF3B82F6);
+  static const Color darkPrimary = accentGold;
+  static const Color lightAccent = accentGold;
+  static const Color darkAccent = accentGold;
 
   // Light Mode Surfaces
   static const Color lightBackground = Color(0xFFFFF8F4);
@@ -22,18 +22,18 @@ class AppColors {
   static const Color lightBorder = Color(0xFFE8D8D2);
   static const Color lightDivider = Color(0xFFF0E4DE);
 
-  // Dark Mode Surfaces
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1F1F1F);
-  static const Color darkCardBg = Color(0xFF252525);
+  // Pitch Dark Mode Surfaces
+  static const Color darkBackground = Color(0xFF0A0A0A);
+  static const Color darkSurface = Color(0xFF141414);
+  static const Color darkCardBg = Color(0xFF1C1C1C);
   static const Color darkPrimaryBurgundy = Color(0xFF9E2A4B);
   static const Color darkTextPrimary = Color(0xFFF5F5F5);
-  static const Color darkTextSecondary = Color(0xFFB0B0B0);
-  static const Color darkBorder = Color(0xFF332A2C);
+  static const Color darkTextSecondary = Color(0xFF9E9E9E);
+  static const Color darkBorder = Color(0xFF2A2A2A);
 
   // Functional Accent Colors
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
-  static const Color ratingStar = Color(0xFFC9A227);
+  static const Color ratingStar = Color(0xFFD4AF37);
 }
