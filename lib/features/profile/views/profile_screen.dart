@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/models/booking_model.dart';
 import '../../../core/state/app_state_scope.dart';
@@ -73,14 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                                 ],
                               ),
                               child: ClipOval(
-                                child: Image.network(
-                                  profile.avatarUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const CircleAvatar(
-                                    backgroundColor: Colors.white24,
-                                    child: Icon(Icons.person, color: Colors.white),
-                                  ),
-                                ),
+                                child: _buildProfileAvatarImage(profile.avatarUrl),
                               ),
                             ),
                           ),
@@ -369,6 +365,63 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
       ],
     );
   }
+  Future<String?> _pickImageFromSource(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        return image.path;
+      }
+    } catch (e) {
+      debugPrint('Image pick error: $e');
+    }
+    return null;
+  }
+
+  Widget _buildProfileAvatarImage(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person, color: Colors.white),
+        ),
+      );
+    } else if (url.startsWith('data:image/')) {
+      try {
+        final base64Str = url.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+            backgroundColor: Colors.white24,
+            child: Icon(Icons.person, color: Colors.white),
+          ),
+        );
+      } catch (_) {
+        return const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person, color: Colors.white),
+        );
+      }
+    } else {
+      return Image.file(
+        File(url),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person, color: Colors.white),
+        ),
+      );
+    }
+  }
 
   Future<void> _openImageEditor(BuildContext context, String currentAvatarUrl) async {
     final appState = AppStateScope.read(context);
@@ -420,11 +473,11 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 title: const Text('Choose from Device Gallery', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 subtitle: const Text('Select existing photo from phone gallery'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.pop(
-                    context,
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-                  );
+                onTap: () async {
+                  final path = await _pickImageFromSource(ImageSource.gallery);
+                  if (path != null && context.mounted) {
+                    Navigator.pop(context, path);
+                  }
                 },
               ),
 
@@ -443,11 +496,11 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 title: const Text('Take Photo with Camera', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 subtitle: const Text('Capture new photo with camera'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.pop(
-                    context,
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-                  );
+                onTap: () async {
+                  final path = await _pickImageFromSource(ImageSource.camera);
+                  if (path != null && context.mounted) {
+                    Navigator.pop(context, path);
+                  }
                 },
               ),
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -92,6 +93,50 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
       if (mounted) setState(() => _isCropping = false);
     }
   }
+
+  Widget _buildImageView(String imagePath, double cropBoxSize) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        width: cropBoxSize,
+        height: cropBoxSize,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(),
+      );
+    } else if (imagePath.startsWith('data:image/')) {
+      try {
+        final base64Str = imagePath.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: cropBoxSize,
+          height: cropBoxSize,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(),
+        );
+      } catch (_) {
+        return _buildFallbackIcon();
+      }
+    } else {
+      return Image.file(
+        File(imagePath),
+        fit: BoxFit.cover,
+        width: cropBoxSize,
+        height: cropBoxSize,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(),
+      );
+    }
+  }
+
+  Widget _buildFallbackIcon() {
+    return Container(
+      color: Colors.grey.shade800,
+      child: const Center(
+        child: Icon(Icons.person, color: AppColors.accentGold, size: 64),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -196,18 +241,7 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                           minScale: 1.0,
                           maxScale: 4.0,
                           boundaryMargin: const EdgeInsets.all(120),
-                          child: Image.network(
-                            _activeImageUrl,
-                            fit: BoxFit.cover,
-                            width: cropBoxSize,
-                            height: cropBoxSize,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: Colors.grey.shade800,
-                              child: const Center(
-                                child: Icon(Icons.person, color: AppColors.accentGold, size: 64),
-                              ),
-                            ),
-                          ),
+                          child: _buildImageView(_activeImageUrl, cropBoxSize),
                         ),
                       ),
                     ),

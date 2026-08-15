@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/location_service.dart';
 import '../theme/app_colors.dart';
@@ -149,22 +151,22 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Dynamic Responsive Top-Left Logo (Prominent Compact Luxury Sizing)
+                // Dynamic Responsive Top-Left Logo (60% Increased Size)
                 Flexible(
                   child: Container(
                     constraints: BoxConstraints(
-                      maxWidth: (MediaQuery.of(context).size.width * 0.60).clamp(150.0, 240.0),
-                      maxHeight: 48,
+                      maxWidth: (MediaQuery.of(context).size.width * 0.60).clamp(220.0, 320.0),
+                      maxHeight: 76,
                     ),
                     child: Image.asset(
                       'assets/images/one_destiny_logo_transparent.png',
-                      height: 44,
+                      height: 70,
                       alignment: Alignment.centerLeft,
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.high,
                       errorBuilder: (context, error, stackTrace) => Image.asset(
                         'assets/images/one_destiny_logo.png',
-                        height: 44,
+                        height: 70,
                         alignment: Alignment.centerLeft,
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.high,
@@ -183,20 +185,11 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                         IconButton(
                           padding: const EdgeInsets.all(6),
                           constraints: const BoxConstraints(),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Notifications: 3 new event updates'),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                          },
+                          onPressed: () => _showNotificationsSheet(context),
                           icon: const Icon(
                             Icons.notifications_outlined,
                             color: AppColors.accentGold,
-                            size: 21,
+                            size: 24,
                           ),
                           tooltip: 'Notifications',
                         ),
@@ -264,14 +257,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                                   ],
                                 ),
                                 child: ClipOval(
-                                  child: Image.network(
-                                    widget.avatarUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => const CircleAvatar(
-                                      backgroundColor: Colors.white24,
-                                      child: Icon(Icons.person_outline, color: Colors.white, size: 18),
-                                    ),
-                                  ),
+                                  child: _buildHeaderAvatarImage(widget.avatarUrl),
                                 ),
                               ),
                             ),
@@ -397,24 +383,12 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                             const SizedBox(height: 14),
 
                             // Welcome Back Banner
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back, Manohar!',
-                                  style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Your luxury event management portal',
-                                  style: AppTypography.description(context, customColor: Colors.white70).copyWith(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'Welcome back, Manohar!',
+                              style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
 
                             const SizedBox(height: 14),
@@ -525,7 +499,224 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
       ),
     );
   }
+
+  Widget _buildHeaderAvatarImage(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person_outline, color: Colors.white, size: 18),
+        ),
+      );
+    } else if (url.startsWith('data:image/')) {
+      try {
+        final base64Str = url.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+            backgroundColor: Colors.white24,
+            child: Icon(Icons.person_outline, color: Colors.white, size: 18),
+          ),
+        );
+      } catch (_) {
+        return const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person_outline, color: Colors.white, size: 18),
+        );
+      }
+    } else {
+      return Image.file(
+        File(url),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person_outline, color: Colors.white, size: 18),
+        ),
+      );
+    }
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.65,
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: isDark ? AppColors.darkBorder : AppColors.accentGold.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.notifications_active_rounded, color: AppColors.accentGold, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Notifications',
+                          style: AppTypography.heading(context).copyWith(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Notifications marked as read'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: const Text('Mark all as read', style: TextStyle(color: AppColors.accentGold, fontSize: 13)),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  children: [
+                    _buildNotificationCard(
+                      context,
+                      title: 'Booking Confirmed 🎉',
+                      message: 'Your booking for Royal Palace Resort & Convention has been confirmed.',
+                      time: '10m ago',
+                      icon: Icons.check_circle_rounded,
+                      iconColor: AppColors.success,
+                      isUnread: true,
+                    ),
+                    _buildNotificationCard(
+                      context,
+                      title: 'Exclusive Offer 💎',
+                      message: 'Get 20% off on all Luxury Catering services this weekend.',
+                      time: '1h ago',
+                      icon: Icons.local_offer_rounded,
+                      iconColor: AppColors.accentGold,
+                      isUnread: true,
+                    ),
+                    _buildNotificationCard(
+                      context,
+                      title: 'New Message 💬',
+                      message: 'Grand Ballroom Decor: "Hello Manohar, we have updated your layout proposal."',
+                      time: '3h ago',
+                      icon: Icons.chat_rounded,
+                      iconColor: AppColors.primaryBurgundy,
+                      isUnread: false,
+                    ),
+                    _buildNotificationCard(
+                      context,
+                      title: 'Reminder 📅',
+                      message: 'Your event consultation is scheduled for tomorrow at 3:00 PM.',
+                      time: '1d ago',
+                      icon: Icons.event_rounded,
+                      iconColor: Colors.blueAccent,
+                      isUnread: false,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationCard(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String time,
+    required IconData icon,
+    required Color iconColor,
+    required bool isUnread,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isUnread
+            ? (isDark ? AppColors.primaryBurgundy.withValues(alpha: 0.25) : AppColors.warmIvory)
+            : (isDark ? AppColors.darkCardBg : Colors.grey.shade50),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isUnread
+              ? AppColors.accentGold.withValues(alpha: 0.4)
+              : (isDark ? AppColors.darkBorder : Colors.black.withValues(alpha: 0.05)),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      time,
+                      style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: AppTypography.description(context).copyWith(fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 
 /// Subtle Gold Vector Line Art Painter (Rings, Vines, Mandalas)
 class GoldLineArtPainter extends CustomPainter {

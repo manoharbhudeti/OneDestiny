@@ -41,6 +41,12 @@ class AppState extends ChangeNotifier {
   String _chatSearchQuery = '';
   String _activeLocation = 'Hyderabad, India';
 
+  // Explore Filter Parameters
+  double _exploreMinPrice = 0.0;
+  double _exploreMaxPrice = 500000.0;
+  double _exploreMinRating = 0.0;
+  String _exploreSortBy = 'popular';
+
   List<FlashCardModel> get flashCards => List.unmodifiable(_flashCards);
   List<CategoryModel> get categories => List.unmodifiable(_categories);
   List<ServiceModel> get popularServices => List.unmodifiable(_popularServices);
@@ -55,6 +61,11 @@ class AppState extends ChangeNotifier {
   String get homeSelectedCategoryId => _homeSelectedCategoryId;
   String get exploreSelectedCategory => _exploreSelectedCategory;
 
+  double get exploreMinPrice => _exploreMinPrice;
+  double get exploreMaxPrice => _exploreMaxPrice;
+  double get exploreMinRating => _exploreMinRating;
+  String get exploreSortBy => _exploreSortBy;
+
   List<VendorModel> get allVendors => [..._nearbyVendors, ..._trendingVendors];
 
   List<VendorModel> get favoriteVendors =>
@@ -67,10 +78,45 @@ class AppState extends ChangeNotifier {
   }
 
   List<VendorModel> get filteredExploreVendors {
-    return allVendors.where((vendor) {
-      return _matchesQuery(vendor, _exploreSearchQuery) && _matchesCategoryName(vendor, _exploreSelectedCategory);
-    }).toList(growable: false);
+    final list = allVendors.where((vendor) {
+      final matchesQuery = _matchesQuery(vendor, _exploreSearchQuery);
+      final matchesCat = _matchesCategoryName(vendor, _exploreSelectedCategory);
+      final matchesPrice = vendor.startingPrice >= _exploreMinPrice && vendor.startingPrice <= _exploreMaxPrice;
+      final matchesRating = vendor.rating >= _exploreMinRating;
+      return matchesQuery && matchesCat && matchesPrice && matchesRating;
+    }).toList();
+
+    if (_exploreSortBy == 'price_low_high') {
+      list.sort((a, b) => a.startingPrice.compareTo(b.startingPrice));
+    } else if (_exploreSortBy == 'price_high_low') {
+      list.sort((a, b) => b.startingPrice.compareTo(a.startingPrice));
+    } else if (_exploreSortBy == 'rating_high') {
+      list.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+    return List.unmodifiable(list);
   }
+
+  void applyExploreFilters({
+    required double minPrice,
+    required double maxPrice,
+    required double minRating,
+    required String sortBy,
+  }) {
+    _exploreMinPrice = minPrice;
+    _exploreMaxPrice = maxPrice;
+    _exploreMinRating = minRating;
+    _exploreSortBy = sortBy;
+    notifyListeners();
+  }
+
+  void resetExploreFilters() {
+    _exploreMinPrice = 0.0;
+    _exploreMaxPrice = 500000.0;
+    _exploreMinRating = 0.0;
+    _exploreSortBy = 'popular';
+    notifyListeners();
+  }
+
 
   List<ChatConversationModel> get filteredConversations {
     if (_chatSearchQuery.trim().isEmpty) return List.unmodifiable(_conversations);

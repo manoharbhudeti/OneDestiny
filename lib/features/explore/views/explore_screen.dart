@@ -44,11 +44,7 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
               const SizedBox(height: 10),
               CustomSearchBar(
                 onChanged: appState.updateExploreSearch,
-                onFilterTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Advanced filters coming soon.')),
-                  );
-                },
+                onFilterTap: () => _openFilterSheet(context, appState),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -125,4 +121,246 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
       ),
     );
   }
+
+  void _openFilterSheet(BuildContext context, dynamic appState) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return ExploreFilterBottomSheet(
+          currentMinPrice: appState.exploreMinPrice,
+          currentMaxPrice: appState.exploreMaxPrice,
+          currentMinRating: appState.exploreMinRating,
+          currentSortBy: appState.exploreSortBy,
+          onApply: ({required minPrice, required maxPrice, required minRating, required sortBy}) {
+            appState.applyExploreFilters(
+              minPrice: minPrice,
+              maxPrice: maxPrice,
+              minRating: minRating,
+              sortBy: sortBy,
+            );
+          },
+          onReset: () {
+            appState.resetExploreFilters();
+          },
+        );
+      },
+    );
+  }
 }
+
+class ExploreFilterBottomSheet extends StatefulWidget {
+  final double currentMinPrice;
+  final double currentMaxPrice;
+  final double currentMinRating;
+  final String currentSortBy;
+  final Function({
+    required double minPrice,
+    required double maxPrice,
+    required double minRating,
+    required String sortBy,
+  }) onApply;
+  final VoidCallback onReset;
+
+  const ExploreFilterBottomSheet({
+    super.key,
+    required this.currentMinPrice,
+    required this.currentMaxPrice,
+    required this.currentMinRating,
+    required this.currentSortBy,
+    required this.onApply,
+    required this.onReset,
+  });
+
+  @override
+  State<ExploreFilterBottomSheet> createState() => _ExploreFilterBottomSheetState();
+}
+
+class _ExploreFilterBottomSheetState extends State<ExploreFilterBottomSheet> {
+  late RangeValues _priceRange;
+  late double _selectedMinRating;
+  late String _selectedSortBy;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceRange = RangeValues(widget.currentMinPrice, widget.currentMaxPrice);
+    _selectedMinRating = widget.currentMinRating;
+    _selectedSortBy = widget.currentSortBy;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter & Sort Vendors',
+                style: AppTypography.heading(context).copyWith(fontSize: 18),
+              ),
+              TextButton(
+                onPressed: () {
+                  widget.onReset();
+                  Navigator.pop(context);
+                },
+                child: const Text('Reset All', style: TextStyle(color: AppColors.error, fontSize: 13)),
+              ),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 10),
+
+          // Price Range Section
+          Text(
+            'Starting Price Range',
+            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('₹${_priceRange.start.toInt()}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.accentGold)),
+              Text('₹${_priceRange.end.toInt()}+', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.accentGold)),
+            ],
+          ),
+          RangeSlider(
+            values: _priceRange,
+            min: 0,
+            max: 500000,
+            divisions: 100,
+            activeColor: AppColors.accentGold,
+            inactiveColor: isDark ? Colors.white12 : Colors.grey.shade300,
+            labels: RangeLabels('₹${_priceRange.start.toInt()}', '₹${_priceRange.end.toInt()}'),
+            onChanged: (RangeValues values) {
+              setState(() {
+                _priceRange = values;
+              });
+            },
+          ),
+
+          const SizedBox(height: 14),
+
+          // Star Rating Section
+          Text(
+            'Minimum Rating',
+            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [0.0, 4.0, 4.5, 4.8].map((rating) {
+                final isSelected = _selectedMinRating == rating;
+                final label = rating == 0.0 ? 'Any' : '$rating★ & up';
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    selectedColor: AppColors.accentGold,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 12,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) setState(() => _selectedMinRating = rating);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Sort Options
+          Text(
+            'Sort By',
+            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _sortChip('popular', 'Recommended'),
+              _sortChip('price_low_high', 'Price: Low to High'),
+              _sortChip('price_high_low', 'Price: High to Low'),
+              _sortChip('rating_high', 'Top Rated'),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Apply CTA Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {
+                widget.onApply(
+                  minPrice: _priceRange.start,
+                  maxPrice: _priceRange.end,
+                  minRating: _selectedMinRating,
+                  sortBy: _selectedSortBy,
+                );
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBurgundy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('APPLY FILTERS', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _sortChip(String value, String label) {
+    final isSelected = _selectedSortBy == value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.accentGold,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
+      ),
+      onSelected: (selected) {
+        if (selected) setState(() => _selectedSortBy = value);
+      },
+    );
+  }
+}
+

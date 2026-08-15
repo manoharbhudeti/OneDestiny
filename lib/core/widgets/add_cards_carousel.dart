@@ -96,7 +96,7 @@ class _AddCardsCarouselState extends State<AddCardsCarousel> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Add Cards',
+                'A',
                 style: AppTypography.subtitle(context).copyWith(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
