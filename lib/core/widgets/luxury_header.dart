@@ -116,12 +116,12 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
       width: double.infinity,
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.18),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -132,143 +132,229 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
             right: -20,
             top: -20,
             child: Opacity(
-              opacity: 0.12,
+              opacity: 0.10,
               child: CustomPaint(
-                size: const Size(180, 180),
+                size: const Size(140, 140),
                 painter: GoldLineArtPainter(color: AppColors.accentGold),
               ),
             ),
           ),
 
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Brand Bar: Gold Logo on Top Left, Actions on Right
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Dynamic Responsive Top-Left Logo (60% Increased Size)
-                Flexible(
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: (MediaQuery.of(context).size.width * 0.60).clamp(220.0, 320.0),
-                      maxHeight: 76,
-                    ),
-                    child: Image.asset(
-                      'assets/images/one_destiny_logo_transparent.png',
-                      height: 70,
-                      alignment: Alignment.centerLeft,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        'assets/images/one_destiny_logo.png',
-                        height: 70,
-                        alignment: Alignment.centerLeft,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Actions Row (Notifications Bell, Theme Toggle & Profile Avatar)
+                // Top Fixed Compact Row: Logo + Greeting + Location on Left, Actions on Right
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Notification Bell Icon with Badge Indicator
-                    Stack(
-                      children: [
-                        IconButton(
-                          padding: const EdgeInsets.all(6),
-                          constraints: const BoxConstraints(),
-                          onPressed: () => _showNotificationsSheet(context),
-                          icon: const Icon(
-                            Icons.notifications_outlined,
-                            color: AppColors.accentGold,
-                            size: 24,
-                          ),
-                          tooltip: 'Notifications',
-                        ),
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.error,
-                              shape: BoxShape.circle,
+                    // Brand Logo + Greeting & Location side by side
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Sharp Logo without tagline
+                          Image.asset(
+                            'assets/images/one_destiny_logo_transparent.png',
+                            height: 46,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            errorBuilder: (context, error, stackTrace) => Image.asset(
+                              'assets/images/one_destiny_logo.png',
+                              height: 46,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 6),
+                          const SizedBox(width: 10),
 
-                    IconButton(
-                      padding: const EdgeInsets.all(6),
-                      constraints: const BoxConstraints(),
-                      onPressed: widget.onThemeToggle,
-                      icon: Icon(
-                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                        color: AppColors.accentGold,
-                        size: 20,
+                          // Hello Manohar & Location dropdown right beside logo
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: _toggleExpansion,
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          widget.greeting,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.heading(context, customColor: Colors.white).copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.1,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      RotationTransition(
+                                        turns: _iconTurns,
+                                        child: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: AppColors.accentGold,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                InkWell(
+                                  onTap: _openLocationPicker,
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on_rounded,
+                                        size: 12,
+                                        color: AppColors.accentGold,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Flexible(
+                                        child: Text(
+                                          _activeLocation,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.description(
+                                            context,
+                                            customColor: Colors.white.withValues(alpha: 0.85),
+                                          ).copyWith(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down_rounded,
+                                        color: AppColors.accentGold,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      tooltip: 'Toggle Theme',
                     ),
+
                     const SizedBox(width: 8),
 
-                    // Interactive Profile Avatar with Hero Animation & Ripple Feedback
-                    GestureDetector(
-                      onTapDown: (_) => setState(() => _isAvatarPressed = true),
-                      onTapUp: (_) => setState(() => _isAvatarPressed = false),
-                      onTapCancel: () => setState(() => _isAvatarPressed = false),
-                      child: AnimatedScale(
-                        scale: _isAvatarPressed ? 0.92 : 1.0,
-                        duration: const Duration(milliseconds: 150),
-                        child: Hero(
-                          tag: 'user-avatar',
-                          child: Material(
-                            color: Colors.transparent,
-                            shape: const CircleBorder(),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: widget.onProfileTap,
-                              customBorder: const CircleBorder(),
+                    // Actions Row: Notifications Bell (Moved right), Dynamic Animated Theme Toggle & Profile Avatar
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Notification Bell Icon with Badge Indicator
+                        Stack(
+                          children: [
+                            IconButton(
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => _showNotificationsSheet(context),
+                              icon: const Icon(
+                                Icons.notifications_outlined,
+                                color: AppColors.accentGold,
+                                size: 22,
+                              ),
+                              tooltip: 'Notifications',
+                            ),
+                            Positioned(
+                              right: 2,
+                              top: 2,
                               child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.error,
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.accentGold,
-                                    width: 1.6,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
-                                child: ClipOval(
-                                  child: _buildHeaderAvatarImage(widget.avatarUrl),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+
+                        // Dynamic Animated Theme Switcher Icon
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 380),
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            return RotationTransition(
+                              turns: Tween<double>(begin: 0.25, end: 1.0).animate(animation),
+                              child: ScaleTransition(scale: animation, child: child),
+                            );
+                          },
+                          child: IconButton(
+                            key: ValueKey<bool>(isDark),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(),
+                            onPressed: widget.onThemeToggle,
+                            icon: Icon(
+                              isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                              color: AppColors.accentGold,
+                              size: 20,
+                            ),
+                            tooltip: 'Toggle Theme',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Interactive Profile Avatar
+                        GestureDetector(
+                          onTapDown: (_) => setState(() => _isAvatarPressed = true),
+                          onTapUp: (_) => setState(() => _isAvatarPressed = false),
+                          onTapCancel: () => setState(() => _isAvatarPressed = false),
+                          child: AnimatedScale(
+                            scale: _isAvatarPressed ? 0.92 : 1.0,
+                            duration: const Duration(milliseconds: 150),
+                            child: Hero(
+                              tag: 'user-avatar',
+                              child: Material(
+                                color: Colors.transparent,
+                                shape: const CircleBorder(),
+                                clipBehavior: Clip.antiAlias,
+                                child: InkWell(
+                                  onTap: widget.onProfileTap,
+                                  customBorder: const CircleBorder(),
+                                  child: Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.accentGold,
+                                        width: 1.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipOval(
+                                      child: _buildHeaderAvatarImage(widget.avatarUrl),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
 
                 const SizedBox(height: 2),
 
