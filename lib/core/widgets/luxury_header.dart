@@ -36,14 +36,34 @@ class LuxuryHeader extends StatefulWidget {
   State<LuxuryHeader> createState() => _LuxuryHeaderState();
 }
 
-class _LuxuryHeaderState extends State<LuxuryHeader> {
+class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
   bool _isAvatarPressed = false;
   late String _activeLocation;
+
+  late final AnimationController _expandController;
+  late final Animation<double> _iconTurns;
 
   @override
   void initState() {
     super.initState();
     _activeLocation = widget.location;
+    _expandController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _iconTurns = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(
+        parent: _expandController,
+        curve: Curves.fastOutSlowIn,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _expandController.dispose();
+    super.dispose();
   }
 
   @override
@@ -52,6 +72,17 @@ class _LuxuryHeaderState extends State<LuxuryHeader> {
     if (oldWidget.location != widget.location) {
       _activeLocation = widget.location;
     }
+  }
+
+  void _toggleExpansion() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _expandController.forward();
+      } else {
+        _expandController.reverse();
+      }
+    });
   }
 
   void _openLocationPicker() {
@@ -144,17 +175,33 @@ class _LuxuryHeaderState extends State<LuxuryHeader> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 InkWell(
-                                  onTap: widget.onProfileTap,
+                                  onTap: _toggleExpansion,
                                   borderRadius: BorderRadius.circular(6),
-                                  child: Text(
-                                    widget.greeting,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.1,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          widget.greeting,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.heading(context, customColor: Colors.white).copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.1,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      RotationTransition(
+                                        turns: _iconTurns,
+                                        child: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: AppColors.accentGold,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -306,10 +353,151 @@ class _LuxuryHeaderState extends State<LuxuryHeader> {
                     ),
                   ],
                 ),
+
+                // EXPANDABLE USER SUMMARY & STATS PANEL
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.fastOutSlowIn,
+                  child: _isExpanded
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 10),
+                            Divider(
+                              color: AppColors.accentGold.withValues(alpha: 0.3),
+                              height: 1,
+                            ),
+                            const SizedBox(height: 10),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Quick Summary',
+                                  style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: widget.onProfileTap,
+                                  child: const Text(
+                                    'View Profile ›',
+                                    style: TextStyle(
+                                      color: AppColors.accentGold,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // Stats Counter Cards
+                            Row(
+                              children: [
+                                _buildHeaderStatCard(
+                                  context,
+                                  title: 'Bookings',
+                                  value: '${widget.bookingCount}',
+                                  icon: Icons.calendar_month_rounded,
+                                  onTap: () {
+                                    _toggleExpansion();
+                                    widget.onNavigateToTab?.call(2);
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                _buildHeaderStatCard(
+                                  context,
+                                  title: 'Active Chats',
+                                  value: '${widget.activeChatCount}',
+                                  icon: Icons.chat_bubble_rounded,
+                                  onTap: () {
+                                    _toggleExpansion();
+                                    widget.onNavigateToTab?.call(3);
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                _buildHeaderStatCard(
+                                  context,
+                                  title: 'Saved Vendors',
+                                  value: '${widget.savedVendorCount}',
+                                  icon: Icons.favorite_rounded,
+                                  onTap: () {
+                                    _toggleExpansion();
+                                    widget.onNavigateToTab?.call(1);
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderStatCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.accentGold.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 14, color: AppColors.accentGold),
+                    const SizedBox(width: 4),
+                    Text(
+                      value,
+                      style: AppTypography.heading(context, customColor: Colors.white).copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.description(context, customColor: Colors.white.withValues(alpha: 0.85)).copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
