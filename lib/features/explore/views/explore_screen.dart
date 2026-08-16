@@ -61,10 +61,11 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
                         labelStyle: AppTypography.description(context).copyWith(
                           fontSize: 12,
                           color: isSelected
-                              ? Colors.white
+                              ? (isDark ? Colors.black : Colors.white)
                               : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                         ),
+                        checkmarkColor: isDark ? Colors.black : Colors.white,
                         selectedColor: primaryColor,
                         backgroundColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
                         shape: RoundedRectangleBorder(
@@ -332,8 +333,8 @@ class _ExploreFilterBottomSheetState extends State<ExploreFilterBottomSheet> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBurgundy,
-                foregroundColor: Colors.white,
+                backgroundColor: isDark ? AppColors.accentGold : AppColors.primaryBurgundy,
+                foregroundColor: isDark ? Colors.black : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('APPLY FILTERS', style: TextStyle(fontWeight: FontWeight.bold)),

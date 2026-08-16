@@ -102,6 +102,7 @@ class TrendingVendorCard extends StatelessWidget {
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
+                        color: isDark ? Colors.black : Colors.white,
                       ),
                     ),
                   ),
@@ -189,7 +190,7 @@ class TrendingVendorCard extends StatelessWidget {
                     onPressed: onBookNowTap ?? onTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: isDark ? Colors.black : Colors.white,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(

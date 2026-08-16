@@ -33,7 +33,7 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.darkBackground,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.darkPrimaryBurgundy,
+        primary: AppColors.accentGold,
         secondary: AppColors.accentGold,
         surface: AppColors.darkSurface,
         onSurface: AppColors.darkTextPrimary,
