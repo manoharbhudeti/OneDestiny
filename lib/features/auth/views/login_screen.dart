@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../main/views/main_navigation_screen.dart';
@@ -36,36 +38,48 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
     if (!_agreed) {
       _showSnack('Please agree to Privacy Policy and Terms');
       return;
     }
 
-    if (_phoneController.text.length != 10) {
+    final phone = _phoneController.text.trim();
+    if (phone.length != 10) {
       _showSnack('Please enter a valid 10-digit mobile number');
       return;
     }
 
     setState(() => _loading = true);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      final res = await AuthService.instance.sendPhoneOtp(phone);
       if (!mounted) return;
       setState(() => _loading = false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OtpVerificationScreen(
-            themeModeNotifier: widget.themeModeNotifier,
-            phone: _phoneController.text.trim(),
-            isEmail: false,
+
+      if (res.success) {
+        _showSnack(res.message.isNotEmpty ? res.message : 'OTP sent successfully!');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpVerificationScreen(
+              themeModeNotifier: widget.themeModeNotifier,
+              phone: phone,
+              isEmail: false,
+            ),
           ),
-        ),
-      );
-    });
+        );
+      } else {
+        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Failed to send OTP. Please try again.'));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showSnack('An error occurred. Please try again.');
+    }
   }
 
-  void _loginWithPassword() {
+  Future<void> _loginWithPassword() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -81,17 +95,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      final res = await AuthService.instance.login(email: email, password: password);
       if (!mounted) return;
       setState(() => _loading = false);
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
-        ),
-        (route) => false,
-      );
-    });
+
+      if (res.success) {
+        // Refresh app state with user profile
+        AppStateScope.read(context).refreshProfile();
+        AppStateScope.read(context).refreshBookings();
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
+          ),
+          (route) => false,
+        );
+      } else {
+        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid credentials. Please try again.'));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showSnack('Login failed. Please check your connection.');
+    }
   }
 
   void _showSnack(String message) {
@@ -235,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextSpan(
                         text: 'By continuing, you agree to our ',
                         style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
-                        children: [
+                        children: const [
                           TextSpan(
                             text: 'Privacy Policy',
                             style: TextStyle(
@@ -243,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const TextSpan(text: ' and '),
+                          TextSpan(text: ' and '),
                           TextSpan(
                             text: 'Terms of Service',
                             style: TextStyle(

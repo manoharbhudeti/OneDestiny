@@ -129,7 +129,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   const SizedBox(width: 10),
                   IconButton.filled(
                     onPressed: () {
-                      AppStateScope.read(context).sendMessage(widget.conversationId, _messageController.text);
+                      AppStateScope.read(context).sendMessage(
+                        widget.conversationId,
+                        _messageController.text,
+                        vendorId: int.tryParse(conversation.vendorId),
+                      );
                       _messageController.clear();
                     },
                     style: IconButton.styleFrom(

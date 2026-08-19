@@ -41,15 +41,26 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: conversations.isEmpty
-                  ? Center(child: Text('No conversations found', style: AppTypography.subtitle(context)))
-                  : ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      itemCount: conversations.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) => _ConversationTile(item: conversations[index]),
-                    ),
+              child: RefreshIndicator(
+                color: AppColors.accentGold,
+                backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+                onRefresh: () => appState.refreshConversations(),
+                child: conversations.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                          Center(child: Text('No conversations found', style: AppTypography.subtitle(context))),
+                        ],
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        itemCount: conversations.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => _ConversationTile(item: conversations[index]),
+                      ),
+              ),
             ),
           ],
         ),

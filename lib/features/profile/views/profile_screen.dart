@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/models/booking_model.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -807,7 +808,9 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await AuthService.instance.logout();
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(

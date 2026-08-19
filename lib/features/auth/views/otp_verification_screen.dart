@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../main/views/main_navigation_screen.dart';
@@ -44,7 +46,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (_seconds == 0) {
         t.cancel();
       } else {
-        setState(() => _seconds--);
+        if (mounted) {
+          setState(() => _seconds--);
+        }
       }
     });
   }
@@ -63,33 +67,88 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   String get _otpCode => _pinControllers.map((c) => c.text).join();
 
-  void _verifyOtp() {
+  Future<void> _verifyOtp() async {
     if (_otpCode.length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter full 4-digit OTP code'),
-          backgroundColor: AppColors.primaryBurgundy,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      _showSnack('Please enter full 4-digit OTP code');
       return;
     }
 
     setState(() => _loading = true);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      if (widget.isEmail) {
+        final email = widget.email ?? '';
+        final res = await AuthService.instance.verifyEmailOtp(email: email, otp: _otpCode);
+        if (!mounted) return;
+        setState(() => _loading = false);
+
+        if (res.success) {
+          AppStateScope.read(context).refreshProfile();
+          AppStateScope.read(context).refreshBookings();
+          _navigateToHome();
+        } else {
+          _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
+        }
+      } else {
+        final phone = widget.phone;
+        final res = await AuthService.instance.verifyPhoneOtp(phone, _otpCode);
+        if (!mounted) return;
+        setState(() => _loading = false);
+
+        if (res.success) {
+          AppStateScope.read(context).refreshProfile();
+          AppStateScope.read(context).refreshBookings();
+          _navigateToHome();
+        } else {
+          _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
+        }
+      }
+    } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      _showSnack('Verification failed. Please try again.');
+    }
+  }
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
-        ),
-        (route) => false,
-      );
-    });
+  Future<void> _handleResend() async {
+    if (_seconds > 0) return;
+    _startTimer();
+
+    try {
+      if (!widget.isEmail) {
+        final res = await AuthService.instance.sendPhoneOtp(widget.phone);
+        if (mounted) {
+          _showSnack(res.message.isNotEmpty ? res.message : 'OTP resent successfully!');
+        }
+      } else {
+        _showSnack('New OTP code sent to your email.');
+      }
+    } catch (_) {
+      if (mounted) {
+        _showSnack('Failed to resend OTP.');
+      }
+    }
+  }
+
+  void _navigateToHome() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
+      ),
+      (route) => false,
+    );
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.primaryBurgundy,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -216,7 +275,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
-                    onTap: _seconds == 0 ? _startTimer : null,
+                    onTap: _seconds == 0 ? _handleResend : null,
                     child: Text(
                       'Resend OTP',
                       style: TextStyle(

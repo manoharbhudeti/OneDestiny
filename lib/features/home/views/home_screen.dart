@@ -39,10 +39,17 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
+        child: RefreshIndicator(
+          color: AppColors.accentGold,
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          onRefresh: () async {
+            await appState.refreshHome();
+            await appState.refreshProfile();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               LuxuryHeader(
@@ -226,6 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

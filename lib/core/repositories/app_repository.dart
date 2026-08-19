@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 import '../data/mock_data.dart';
 import '../models/booking_model.dart';
 import '../models/category_model.dart';
@@ -5,18 +7,544 @@ import '../models/chat_model.dart';
 import '../models/flash_card_model.dart';
 import '../models/service_model.dart';
 import '../models/user_profile_model.dart';
+import '../models/vendor_detail_models.dart';
 import '../models/vendor_model.dart';
+import '../network/api_response.dart';
+import '../services/api_service.dart';
+import '../services/auth_storage_service.dart';
 
 abstract class AppRepository {
-  List<FlashCardModel> getFlashCards();
-  List<CategoryModel> getCategories();
-  List<ServiceModel> getPopularServices();
-  List<VendorModel> getNearbyVendors();
-  List<VendorModel> getTrendingVendors();
-  UserProfileModel getUserProfile();
-  List<BookingModel> getBookings();
-  List<ChatConversationModel> getConversations();
-  List<ChatMessageModel> getMessages(String conversationId);
+  Future<List<FlashCardModel>> getFlashCards();
+  Future<List<CategoryModel>> getCategories();
+  Future<List<ServiceModel>> getPopularServices();
+  Future<List<VendorModel>> getNearbyVendors({String? city, String? categoryId, String? search});
+  Future<List<VendorModel>> getTrendingVendors({String? city, String? categoryId});
+  Future<List<VendorModel>> searchVendors({
+    String? query,
+    String? categoryId,
+    String? city,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? sortBy,
+    int page = 1,
+    int pageSize = 20,
+  });
+  Future<VendorFullProfile?> getVendorProfile(int vendorId);
+  Future<List<VendorServiceItem>> getVendorServices(int vendorId);
+  Future<List<VendorPortfolioItem>> getVendorPortfolio(int vendorId);
+  Future<List<VendorReviewItem>> getVendorReviews(int vendorId);
+  Future<ApiResponse<String>> sendVendorInquiry({
+    required int vendorId,
+    required String message,
+    DateTime? eventDate,
+    String? eventType,
+    int? guestCount,
+    double? budget,
+  });
+  Future<ApiResponse<BookingModel>> bookVendor({
+    required int vendorId,
+    required DateTime eventDate,
+    String? location,
+    String? notes,
+    int? guestCount,
+    double? budget,
+  });
+  Future<ApiResponse<VendorReviewItem>> submitVendorReview({
+    required int vendorId,
+    required int rating,
+    required String comment,
+  });
+  Future<List<BookingModel>> getBookings();
+  Future<BookingModel?> getBookingDetail(int bookingId);
+  Future<ApiResponse<BookingModel>> cancelBooking(int bookingId, {String? reason});
+  Future<List<ChatConversationModel>> getConversations();
+  Future<List<ChatMessageModel>> getMessages(String conversationId, {int? vendorId});
+  Future<ChatMessageModel?> sendMessage({
+    int? conversationId,
+    int? vendorId,
+    required String text,
+  });
+  Future<UserProfileModel> getUserProfile();
+  Future<ApiResponse<UserProfileModel>> updateUserProfile({
+    required String name,
+    required String email,
+    String? mobile,
+  });
+}
+
+class ApiAppRepository implements AppRepository {
+  final MockAppRepository _mock = MockAppRepository();
+
+  @override
+  Future<List<FlashCardModel>> getFlashCards() async {
+    return _mock.getFlashCards();
+  }
+
+  @override
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      final res = await ApiService.instance.get<List<CategoryModel>>(
+        url: ApiConfig.categories,
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>)).toList();
+          }
+          return <CategoryModel>[];
+        },
+        requiresAuth: false,
+      );
+
+      if (res.success && res.data != null && res.data!.isNotEmpty) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getCategories Error] $e');
+    }
+    return _mock.getCategories();
+  }
+
+  @override
+  Future<List<ServiceModel>> getPopularServices() async {
+    return _mock.getPopularServices();
+  }
+
+  @override
+  Future<List<VendorModel>> getNearbyVendors({String? city, String? categoryId, String? search}) async {
+    return searchVendors(
+      city: city,
+      categoryId: categoryId,
+      query: search,
+      sortBy: 'nearby',
+    );
+  }
+
+  @override
+  Future<List<VendorModel>> getTrendingVendors({String? city, String? categoryId}) async {
+    return searchVendors(
+      city: city,
+      categoryId: categoryId,
+      sortBy: 'popular',
+    );
+  }
+
+  @override
+  Future<List<VendorModel>> searchVendors({
+    String? query,
+    String? categoryId,
+    String? city,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? sortBy,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (query != null && query.trim().isNotEmpty) {
+        queryParams['search'] = query.trim();
+      }
+      if (categoryId != null && categoryId != 'all' && categoryId != 'All') {
+        final parsedCatId = int.tryParse(categoryId);
+        if (parsedCatId != null) {
+          queryParams['categoryId'] = parsedCatId.toString();
+        }
+      }
+      if (city != null && city.trim().isNotEmpty && !city.toLowerCase().contains('all')) {
+        queryParams['city'] = city.trim();
+      }
+      if (minPrice != null && minPrice > 0) {
+        queryParams['minPrice'] = minPrice.toString();
+      }
+      if (maxPrice != null && maxPrice < 500000) {
+        queryParams['maxPrice'] = maxPrice.toString();
+      }
+      if (minRating != null && minRating > 0) {
+        queryParams['minRating'] = minRating.toString();
+      }
+      if (sortBy != null) {
+        queryParams['sortBy'] = sortBy;
+      }
+
+      final favorites = await AuthStorageService.instance.getFavoriteVendorIds();
+
+      final paged = await ApiService.instance.getPaged<VendorModel>(
+        url: ApiConfig.clientVendors,
+        queryParams: queryParams,
+        fromJsonItem: (json) {
+          final map = json as Map<String, dynamic>;
+          final id = map['id']?.toString() ?? '';
+          return VendorModel.fromJson(map, isFavorite: favorites.contains(id));
+        },
+        requiresAuth: false,
+      );
+
+      if (paged.items.isNotEmpty) {
+        return paged.items;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository searchVendors Error] $e');
+    }
+
+    // Fallback to mock data with local filtering
+    final favorites = await AuthStorageService.instance.getFavoriteVendorIds();
+    final mockVendors = await _mock.getNearbyVendors();
+    final all = mockVendors.map((v) => v.copyWith(isFavorite: favorites.contains(v.id))).toList();
+    return all;
+  }
+
+  @override
+  Future<VendorFullProfile?> getVendorProfile(int vendorId) async {
+    try {
+      final res = await ApiService.instance.get<VendorFullProfile>(
+        url: ApiConfig.clientVendorProfile(vendorId),
+        fromJsonT: (json) => VendorFullProfile.fromJson(json as Map<String, dynamic>),
+        requiresAuth: false,
+      );
+      if (res.success && res.data != null) {
+        return res.data;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getVendorProfile Error] $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<List<VendorServiceItem>> getVendorServices(int vendorId) async {
+    try {
+      final res = await ApiService.instance.get<List<VendorServiceItem>>(
+        url: ApiConfig.clientVendorServices(vendorId),
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => VendorServiceItem.fromJson(e as Map<String, dynamic>)).toList();
+          }
+          return <VendorServiceItem>[];
+        },
+        requiresAuth: false,
+      );
+      if (res.success && res.data != null) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getVendorServices Error] $e');
+    }
+    return [];
+  }
+
+  @override
+  Future<List<VendorPortfolioItem>> getVendorPortfolio(int vendorId) async {
+    try {
+      final res = await ApiService.instance.get<List<VendorPortfolioItem>>(
+        url: ApiConfig.clientVendorPortfolio(vendorId),
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => VendorPortfolioItem.fromJson(e as Map<String, dynamic>)).toList();
+          }
+          return <VendorPortfolioItem>[];
+        },
+        requiresAuth: false,
+      );
+      if (res.success && res.data != null) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getVendorPortfolio Error] $e');
+    }
+    return [];
+  }
+
+  @override
+  Future<List<VendorReviewItem>> getVendorReviews(int vendorId) async {
+    try {
+      final res = await ApiService.instance.get<List<VendorReviewItem>>(
+        url: ApiConfig.clientVendorReviews(vendorId),
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => VendorReviewItem.fromJson(e as Map<String, dynamic>)).toList();
+          }
+          return <VendorReviewItem>[];
+        },
+        requiresAuth: false,
+      );
+      if (res.success && res.data != null) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getVendorReviews Error] $e');
+    }
+    return [];
+  }
+
+  @override
+  Future<ApiResponse<String>> sendVendorInquiry({
+    required int vendorId,
+    required String message,
+    DateTime? eventDate,
+    String? eventType,
+    int? guestCount,
+    double? budget,
+  }) async {
+    return await ApiService.instance.post<String>(
+      url: ApiConfig.clientVendorInquire(vendorId),
+      body: {
+        'message': message,
+        'eventDate': eventDate?.toIso8601String(),
+        'eventType': eventType,
+        'guestCount': guestCount,
+        'budget': budget,
+      },
+      fromJsonT: (json) => json is String ? json : 'Inquiry sent successfully.',
+      requiresAuth: true,
+    );
+  }
+
+  @override
+  Future<ApiResponse<BookingModel>> bookVendor({
+    required int vendorId,
+    required DateTime eventDate,
+    String? location,
+    String? notes,
+    int? guestCount,
+    double? budget,
+  }) async {
+    return await ApiService.instance.post<BookingModel>(
+      url: ApiConfig.clientVendorBook(vendorId),
+      body: {
+        'eventDate': eventDate.toIso8601String(),
+        'eventLocation': location,
+        'notes': notes,
+        'guestCount': guestCount,
+        'budget': budget,
+      },
+      fromJsonT: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
+      requiresAuth: true,
+    );
+  }
+
+  @override
+  Future<ApiResponse<VendorReviewItem>> submitVendorReview({
+    required int vendorId,
+    required int rating,
+    required String comment,
+  }) async {
+    return await ApiService.instance.post<VendorReviewItem>(
+      url: ApiConfig.clientVendorReview(vendorId),
+      body: {
+        'rating': rating,
+        'comment': comment,
+      },
+      fromJsonT: (json) => VendorReviewItem.fromJson(json as Map<String, dynamic>),
+      requiresAuth: true,
+    );
+  }
+
+  @override
+  Future<List<BookingModel>> getBookings() async {
+    try {
+      final paged = await ApiService.instance.getPaged<BookingModel>(
+        url: ApiConfig.clientBookings,
+        fromJsonItem: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
+        requiresAuth: true,
+      );
+
+      if (paged.items.isNotEmpty) {
+        return paged.items;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getBookings Error] $e');
+    }
+    return _mock.getBookings();
+  }
+
+  @override
+  Future<BookingModel?> getBookingDetail(int bookingId) async {
+    try {
+      final res = await ApiService.instance.get<BookingModel>(
+        url: ApiConfig.clientBookingDetail(bookingId),
+        fromJsonT: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
+        requiresAuth: true,
+      );
+      if (res.success && res.data != null) {
+        return res.data;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getBookingDetail Error] $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<ApiResponse<BookingModel>> cancelBooking(int bookingId, {String? reason}) async {
+    return await ApiService.instance.post<BookingModel>(
+      url: ApiConfig.clientBookingCancel(bookingId),
+      body: {
+        'reason': reason ?? 'Client cancelled',
+      },
+      fromJsonT: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
+      requiresAuth: true,
+    );
+  }
+
+  @override
+  Future<List<ChatConversationModel>> getConversations() async {
+    try {
+      final res = await ApiService.instance.get<List<ChatConversationModel>>(
+        url: ApiConfig.chatConversations,
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => ChatConversationModel.fromJson(e as Map<String, dynamic>)).toList();
+          }
+          return <ChatConversationModel>[];
+        },
+        requiresAuth: true,
+      );
+
+      if (res.success && res.data != null && res.data!.isNotEmpty) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getConversations Error] $e');
+    }
+    return _mock.getConversations();
+  }
+
+  @override
+  Future<List<ChatMessageModel>> getMessages(String conversationId, {int? vendorId}) async {
+    try {
+      final currentUserId = await AuthStorageService.instance.getUserId();
+      final queryParams = <String, String>{};
+      final parsedConvId = int.tryParse(conversationId);
+      if (parsedConvId != null) {
+        queryParams['conversationId'] = parsedConvId.toString();
+      }
+      if (vendorId != null) {
+        queryParams['vendorId'] = vendorId.toString();
+      }
+
+      final res = await ApiService.instance.get<List<ChatMessageModel>>(
+        url: ApiConfig.chatMessages,
+        queryParams: queryParams.isNotEmpty ? queryParams : null,
+        fromJsonT: (json) {
+          if (json is List) {
+            return json.map((e) => ChatMessageModel.fromJson(e as Map<String, dynamic>, currentUserId: currentUserId)).toList();
+          }
+          return <ChatMessageModel>[];
+        },
+        requiresAuth: true,
+      );
+
+      if (res.success && res.data != null && res.data!.isNotEmpty) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getMessages Error] $e');
+    }
+    return _mock.getMessages(conversationId);
+  }
+
+  @override
+  Future<ChatMessageModel?> sendMessage({
+    int? conversationId,
+    int? vendorId,
+    required String text,
+  }) async {
+    try {
+      final currentUserId = await AuthStorageService.instance.getUserId();
+      final res = await ApiService.instance.post<ChatMessageModel>(
+        url: ApiConfig.chatSend,
+        body: {
+          'conversationId': conversationId,
+          'vendorProfileId': vendorId,
+          'message': text,
+        },
+        fromJsonT: (json) => ChatMessageModel.fromJson(json as Map<String, dynamic>, currentUserId: currentUserId),
+        requiresAuth: true,
+      );
+
+      if (res.success && res.data != null) {
+        return res.data;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository sendMessage Error] $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<UserProfileModel> getUserProfile() async {
+    // Check saved local profile first
+    final saved = await AuthStorageService.instance.getSavedProfile();
+    if (saved != null) {
+      // Sync in background with backend if token available
+      try {
+        final res = await ApiService.instance.get<UserProfileModel>(
+          url: ApiConfig.accountProfile,
+          fromJsonT: (json) => UserProfileModel.fromJson(json as Map<String, dynamic>),
+          requiresAuth: true,
+        );
+        if (res.success && res.data != null) {
+          await AuthStorageService.instance.updateProfile(
+            name: res.data!.name,
+            email: res.data!.email,
+            mobile: res.data!.mobile,
+            avatarUrl: res.data!.avatarUrl,
+            notificationsEnabled: res.data!.notificationsEnabled,
+          );
+          return res.data!;
+        }
+      } catch (_) {}
+      return saved;
+    }
+
+    try {
+      final res = await ApiService.instance.get<UserProfileModel>(
+        url: ApiConfig.accountProfile,
+        fromJsonT: (json) => UserProfileModel.fromJson(json as Map<String, dynamic>),
+        requiresAuth: true,
+      );
+      if (res.success && res.data != null) {
+        return res.data!;
+      }
+    } catch (e) {
+      debugPrint('[ApiAppRepository getUserProfile Error] $e');
+    }
+
+    return _mock.getUserProfile();
+  }
+
+  @override
+  Future<ApiResponse<UserProfileModel>> updateUserProfile({
+    required String name,
+    required String email,
+    String? mobile,
+  }) async {
+    final res = await ApiService.instance.put<UserProfileModel>(
+      url: ApiConfig.accountProfile,
+      body: {
+        'fullName': name,
+        'email': email,
+        'phone': mobile,
+      },
+      fromJsonT: (json) => UserProfileModel.fromJson(json as Map<String, dynamic>),
+      requiresAuth: true,
+    );
+
+    if (res.success) {
+      await AuthStorageService.instance.updateProfile(
+        name: name,
+        email: email,
+        mobile: mobile,
+      );
+    }
+
+    return res;
+  }
 }
 
 class MockAppRepository implements AppRepository {
@@ -24,35 +552,104 @@ class MockAppRepository implements AppRepository {
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
 
   @override
-  List<FlashCardModel> getFlashCards() => List<FlashCardModel>.of(MockData.flashCards);
+  Future<List<FlashCardModel>> getFlashCards() async => List<FlashCardModel>.of(MockData.flashCards);
 
   @override
-  List<CategoryModel> getCategories() => List<CategoryModel>.of(MockData.categories);
+  Future<List<CategoryModel>> getCategories() async => List<CategoryModel>.of(MockData.categories);
 
   @override
-  List<ServiceModel> getPopularServices() => List<ServiceModel>.of(MockData.popularServices);
+  Future<List<ServiceModel>> getPopularServices() async => List<ServiceModel>.of(MockData.popularServices);
 
   @override
-  List<VendorModel> getNearbyVendors() => List<VendorModel>.of(MockData.nearbyVendors);
+  Future<List<VendorModel>> getNearbyVendors({String? city, String? categoryId, String? search}) async =>
+      List<VendorModel>.of(MockData.nearbyVendors);
 
   @override
-  List<VendorModel> getTrendingVendors() => List<VendorModel>.of(MockData.trendingVendors);
+  Future<List<VendorModel>> getTrendingVendors({String? city, String? categoryId}) async =>
+      List<VendorModel>.of(MockData.trendingVendors);
 
   @override
-  UserProfileModel getUserProfile() {
-    return const UserProfileModel(
-      name: 'Manohar',
-      mobile: '+91 98765 43210',
-      email: 'manohar@onedestiny.com',
-      avatarUrl: _avatarUrl,
-      notificationsEnabled: true,
+  Future<List<VendorModel>> searchVendors({
+    String? query,
+    String? categoryId,
+    String? city,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? sortBy,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return List<VendorModel>.of(MockData.nearbyVendors);
+  }
+
+  @override
+  Future<VendorFullProfile?> getVendorProfile(int vendorId) async => null;
+
+  @override
+  Future<List<VendorServiceItem>> getVendorServices(int vendorId) async => [];
+
+  @override
+  Future<List<VendorPortfolioItem>> getVendorPortfolio(int vendorId) async => [];
+
+  @override
+  Future<List<VendorReviewItem>> getVendorReviews(int vendorId) async => [];
+
+  @override
+  Future<ApiResponse<String>> sendVendorInquiry({
+    required int vendorId,
+    required String message,
+    DateTime? eventDate,
+    String? eventType,
+    int? guestCount,
+    double? budget,
+  }) async => ApiResponse.ok('Inquiry sent successfully');
+
+  @override
+  Future<ApiResponse<BookingModel>> bookVendor({
+    required int vendorId,
+    required DateTime eventDate,
+    String? location,
+    String? notes,
+    int? guestCount,
+    double? budget,
+  }) async {
+    return ApiResponse.ok(
+      BookingModel(
+        id: 'b_${DateTime.now().millisecondsSinceEpoch}',
+        vendorId: vendorId.toString(),
+        title: 'Vendor Booking',
+        category: 'Event Service',
+        dateLabel: 'Oct 24, 2026',
+        location: location ?? 'Hyderabad',
+        amount: '₹50,000',
+        status: 'REQUESTED',
+        imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=200&q=80',
+      ),
     );
   }
 
   @override
-  List<BookingModel> getBookings() {
-    return const [
-      BookingModel(
+  Future<ApiResponse<VendorReviewItem>> submitVendorReview({
+    required int vendorId,
+    required int rating,
+    required String comment,
+  }) async {
+    return ApiResponse.ok(
+      VendorReviewItem(
+        id: 1,
+        clientName: 'Client',
+        rating: rating.toDouble(),
+        comment: comment,
+        createdAt: 'Just now',
+      ),
+    );
+  }
+
+  @override
+  Future<List<BookingModel>> getBookings() async {
+    return [
+      const BookingModel(
         id: 'b_1',
         vendorId: 'tv_1',
         title: 'Destiny Grand Wedding',
@@ -67,9 +664,21 @@ class MockAppRepository implements AppRepository {
   }
 
   @override
-  List<ChatConversationModel> getConversations() {
-    return const [
-      ChatConversationModel(
+  Future<BookingModel?> getBookingDetail(int bookingId) async {
+    final list = await getBookings();
+    return list.first;
+  }
+
+  @override
+  Future<ApiResponse<BookingModel>> cancelBooking(int bookingId, {String? reason}) async {
+    final list = await getBookings();
+    return ApiResponse.ok(list.first.copyWith(status: 'CANCELLED'));
+  }
+
+  @override
+  Future<List<ChatConversationModel>> getConversations() async {
+    return [
+      const ChatConversationModel(
         id: 'c_1',
         vendorId: 'v_1',
         vendorName: 'Lens & Light Studio',
@@ -79,7 +688,7 @@ class MockAppRepository implements AppRepository {
         unreadCount: 2,
         avatarUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=200&q=80',
       ),
-      ChatConversationModel(
+      const ChatConversationModel(
         id: 'c_2',
         vendorId: 'tv_1',
         vendorName: 'Destiny Grand Wedding',
@@ -89,7 +698,7 @@ class MockAppRepository implements AppRepository {
         unreadCount: 1,
         avatarUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=200&q=80',
       ),
-      ChatConversationModel(
+      const ChatConversationModel(
         id: 'c_3',
         vendorId: 'v_3',
         vendorName: 'Royal Culinary Caterers',
@@ -99,7 +708,7 @@ class MockAppRepository implements AppRepository {
         unreadCount: 0,
         avatarUrl: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=200&q=80',
       ),
-      ChatConversationModel(
+      const ChatConversationModel(
         id: 'c_4',
         vendorId: 'v_5',
         vendorName: 'Sonic Bass DJ & Sound',
@@ -113,10 +722,10 @@ class MockAppRepository implements AppRepository {
   }
 
   @override
-  List<ChatMessageModel> getMessages(String conversationId) {
-    final vendorName = getConversations()
-        .firstWhere((conversation) => conversation.id == conversationId)
-        .vendorName;
+  Future<List<ChatMessageModel>> getMessages(String conversationId, {int? vendorId}) async {
+    final convs = await getConversations();
+    final match = convs.where((c) => c.id == conversationId);
+    final vendorName = match.isNotEmpty ? match.first.vendorName : 'Vendor';
 
     return [
       ChatMessageModel(
@@ -129,7 +738,7 @@ class MockAppRepository implements AppRepository {
       ChatMessageModel(
         id: '${conversationId}_m2',
         conversationId: conversationId,
-        text: 'Hello Manohar, thanks for reaching out to $vendorName. Please share your event date and guest count.',
+        text: 'Hello, thanks for reaching out to $vendorName. Please share your event date and guest count.',
         time: '10:22 AM',
         isMine: false,
       ),
@@ -148,5 +757,48 @@ class MockAppRepository implements AppRepository {
         isMine: false,
       ),
     ];
+  }
+
+  @override
+  Future<ChatMessageModel?> sendMessage({
+    int? conversationId,
+    int? vendorId,
+    required String text,
+  }) async {
+    return ChatMessageModel(
+      id: 'm_${DateTime.now().millisecondsSinceEpoch}',
+      conversationId: conversationId?.toString() ?? 'c_1',
+      text: text,
+      time: 'Now',
+      isMine: true,
+    );
+  }
+
+  @override
+  Future<UserProfileModel> getUserProfile() async {
+    return const UserProfileModel(
+      name: 'Manohar',
+      mobile: '+91 98765 43210',
+      email: 'manohar@onedestiny.com',
+      avatarUrl: _avatarUrl,
+      notificationsEnabled: true,
+    );
+  }
+
+  @override
+  Future<ApiResponse<UserProfileModel>> updateUserProfile({
+    required String name,
+    required String email,
+    String? mobile,
+  }) async {
+    return ApiResponse.ok(
+      UserProfileModel(
+        name: name,
+        email: email,
+        mobile: mobile ?? '+91 98765 43210',
+        avatarUrl: _avatarUrl,
+        notificationsEnabled: true,
+      ),
+    );
   }
 }

@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../core/services/auth_storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/views/login_screen.dart';
+import '../../main/views/main_navigation_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -39,15 +41,21 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
   }
 
-  void _navigateToHome() {
+  Future<void> _navigateToHome() async {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
+
+    final isLoggedIn = await AuthStorageService.instance.isLoggedIn();
+    if (!mounted) return;
+
+    final targetScreen = isLoggedIn
+        ? MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier)
+        : LoginScreen(themeModeNotifier: widget.themeModeNotifier);
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 800),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            LoginScreen(themeModeNotifier: widget.themeModeNotifier),
+        pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
