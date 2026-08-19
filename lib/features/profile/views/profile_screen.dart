@@ -60,25 +60,22 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       // Avatar with Edit Image Camera Badge
                       Stack(
                         children: [
-                          Hero(
-                            tag: 'user-avatar',
-                            child: Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.accentGold, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: _buildProfileAvatarImage(profile.avatarUrl),
-                              ),
+                          Container(
+                            width: 68,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.accentGold, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _buildProfileAvatarImage(profile.avatarUrl),
                             ),
                           ),
                           Positioned(

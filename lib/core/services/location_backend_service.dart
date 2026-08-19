@@ -25,6 +25,7 @@ class CityModel {
   final int id;
   final int stateId;
   final String name;
+  final String? stateName;
   final double latitude;
   final double longitude;
 
@@ -32,6 +33,7 @@ class CityModel {
     required this.id,
     required this.stateId,
     required this.name,
+    this.stateName,
     required this.latitude,
     required this.longitude,
   });
@@ -41,6 +43,7 @@ class CityModel {
       id: json['id'] as int? ?? 0,
       stateId: json['stateId'] as int? ?? 0,
       name: json['name'] as String? ?? '',
+      stateName: json['stateName'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
     );
@@ -83,7 +86,7 @@ class LocationBackendService {
         }
         return <StateModel>[];
       },
-      requiresAuth: false,
+      requiresAuth: true,
     );
 
     return res.data ?? [];
@@ -101,7 +104,7 @@ class LocationBackendService {
         }
         return <CityModel>[];
       },
-      requiresAuth: false,
+      requiresAuth: true,
     );
 
     return res.data ?? [];
@@ -117,7 +120,7 @@ class LocationBackendService {
         }
         return <AreaModel>[];
       },
-      requiresAuth: false,
+      requiresAuth: true,
     );
 
     return res.data ?? [];

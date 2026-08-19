@@ -74,11 +74,9 @@ abstract class AppRepository {
 }
 
 class ApiAppRepository implements AppRepository {
-  final MockAppRepository _mock = MockAppRepository();
-
   @override
   Future<List<FlashCardModel>> getFlashCards() async {
-    return _mock.getFlashCards();
+    return [];
   }
 
   @override
@@ -101,12 +99,12 @@ class ApiAppRepository implements AppRepository {
     } catch (e) {
       debugPrint('[ApiAppRepository getCategories Error] $e');
     }
-    return _mock.getCategories();
+    return [];
   }
 
   @override
   Future<List<ServiceModel>> getPopularServices() async {
-    return _mock.getPopularServices();
+    return [];
   }
 
   @override
@@ -184,18 +182,11 @@ class ApiAppRepository implements AppRepository {
         requiresAuth: false,
       );
 
-      if (paged.items.isNotEmpty) {
-        return paged.items;
-      }
+      return paged.items;
     } catch (e) {
       debugPrint('[ApiAppRepository searchVendors Error] $e');
+      return [];
     }
-
-    // Fallback to mock data with local filtering
-    final favorites = await AuthStorageService.instance.getFavoriteVendorIds();
-    final mockVendors = await _mock.getNearbyVendors();
-    final all = mockVendors.map((v) => v.copyWith(isFavorite: favorites.contains(v.id))).toList();
-    return all;
   }
 
   @override
@@ -316,13 +307,41 @@ class ApiAppRepository implements AppRepository {
     return await ApiService.instance.post<BookingModel>(
       url: ApiConfig.clientVendorBook(vendorId),
       body: {
+        'eventType': 'Wedding',
         'eventDate': eventDate.toIso8601String(),
-        'eventLocation': location,
+        'venue': location,
         'notes': notes,
-        'guestCount': guestCount,
-        'budget': budget,
       },
-      fromJsonT: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
+      fromJsonT: (json) {
+        if (json is Map<String, dynamic>) {
+          if (json.containsKey('bookingId')) {
+            final bId = json['bookingId'].toString();
+            return BookingModel(
+              id: bId,
+              vendorId: vendorId.toString(),
+              title: 'Booking #$bId',
+              category: 'Wedding Service',
+              dateLabel: '${eventDate.day}/${eventDate.month}/${eventDate.year}',
+              location: location ?? 'Pending location',
+              amount: budget != null ? '₹${budget.toInt()}' : 'Pending quote',
+              status: 'PENDING',
+              imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=400&q=80',
+            );
+          }
+          return BookingModel.fromJson(json);
+        }
+        return BookingModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          vendorId: vendorId.toString(),
+          title: 'Vendor Booking',
+          category: 'Wedding Service',
+          dateLabel: '${eventDate.day}/${eventDate.month}/${eventDate.year}',
+          location: location ?? 'Pending location',
+          amount: budget != null ? '₹${budget.toInt()}' : 'Pending quote',
+          status: 'PENDING',
+          imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=400&q=80',
+        );
+      },
       requiresAuth: true,
     );
   }
@@ -353,13 +372,11 @@ class ApiAppRepository implements AppRepository {
         requiresAuth: true,
       );
 
-      if (paged.items.isNotEmpty) {
-        return paged.items;
-      }
+      return paged.items;
     } catch (e) {
       debugPrint('[ApiAppRepository getBookings Error] $e');
+      return [];
     }
-    return _mock.getBookings();
   }
 
   @override
@@ -383,10 +400,23 @@ class ApiAppRepository implements AppRepository {
   Future<ApiResponse<BookingModel>> cancelBooking(int bookingId, {String? reason}) async {
     return await ApiService.instance.post<BookingModel>(
       url: ApiConfig.clientBookingCancel(bookingId),
-      body: {
-        'reason': reason ?? 'Client cancelled',
+      body: null,
+      fromJsonT: (json) {
+        if (json is Map<String, dynamic>) {
+          return BookingModel.fromJson(json);
+        }
+        return BookingModel(
+          id: bookingId.toString(),
+          vendorId: '',
+          title: 'Booking #$bookingId',
+          category: 'Event Service',
+          dateLabel: 'Cancelled',
+          location: '',
+          amount: '',
+          status: 'CANCELLED',
+          imageUrl: '',
+        );
       },
-      fromJsonT: (json) => BookingModel.fromJson(json as Map<String, dynamic>),
       requiresAuth: true,
     );
   }
@@ -405,13 +435,13 @@ class ApiAppRepository implements AppRepository {
         requiresAuth: true,
       );
 
-      if (res.success && res.data != null && res.data!.isNotEmpty) {
+      if (res.success && res.data != null) {
         return res.data!;
       }
     } catch (e) {
       debugPrint('[ApiAppRepository getConversations Error] $e');
     }
-    return _mock.getConversations();
+    return [];
   }
 
   @override
@@ -420,17 +450,19 @@ class ApiAppRepository implements AppRepository {
       final currentUserId = await AuthStorageService.instance.getUserId();
       final queryParams = <String, String>{};
       final parsedConvId = int.tryParse(conversationId);
-      if (parsedConvId != null) {
-        queryParams['conversationId'] = parsedConvId.toString();
-      }
-      if (vendorId != null) {
-        queryParams['vendorId'] = vendorId.toString();
+      final partyId = vendorId ?? parsedConvId;
+      if (partyId != null) {
+        queryParams['otherPartyId'] = partyId.toString();
       }
 
       final res = await ApiService.instance.get<List<ChatMessageModel>>(
         url: ApiConfig.chatMessages,
         queryParams: queryParams.isNotEmpty ? queryParams : null,
         fromJsonT: (json) {
+          if (json is Map<String, dynamic> && json.containsKey('items')) {
+            final items = json['items'] as List;
+            return items.map((e) => ChatMessageModel.fromJson(e as Map<String, dynamic>, currentUserId: currentUserId)).toList();
+          }
           if (json is List) {
             return json.map((e) => ChatMessageModel.fromJson(e as Map<String, dynamic>, currentUserId: currentUserId)).toList();
           }
@@ -439,13 +471,13 @@ class ApiAppRepository implements AppRepository {
         requiresAuth: true,
       );
 
-      if (res.success && res.data != null && res.data!.isNotEmpty) {
+      if (res.success && res.data != null) {
         return res.data!;
       }
     } catch (e) {
       debugPrint('[ApiAppRepository getMessages Error] $e');
     }
-    return _mock.getMessages(conversationId);
+    return [];
   }
 
   @override
@@ -456,12 +488,12 @@ class ApiAppRepository implements AppRepository {
   }) async {
     try {
       final currentUserId = await AuthStorageService.instance.getUserId();
+      final recipientId = vendorId ?? conversationId;
       final res = await ApiService.instance.post<ChatMessageModel>(
         url: ApiConfig.chatSend,
         body: {
-          'conversationId': conversationId,
-          'vendorProfileId': vendorId,
-          'message': text,
+          if (recipientId != null) 'recipientVendorProfileId': recipientId,
+          'content': text,
         },
         fromJsonT: (json) => ChatMessageModel.fromJson(json as Map<String, dynamic>, currentUserId: currentUserId),
         requiresAuth: true,
@@ -478,29 +510,7 @@ class ApiAppRepository implements AppRepository {
 
   @override
   Future<UserProfileModel> getUserProfile() async {
-    // Check saved local profile first
     final saved = await AuthStorageService.instance.getSavedProfile();
-    if (saved != null) {
-      // Sync in background with backend if token available
-      try {
-        final res = await ApiService.instance.get<UserProfileModel>(
-          url: ApiConfig.accountProfile,
-          fromJsonT: (json) => UserProfileModel.fromJson(json as Map<String, dynamic>),
-          requiresAuth: true,
-        );
-        if (res.success && res.data != null) {
-          await AuthStorageService.instance.updateProfile(
-            name: res.data!.name,
-            email: res.data!.email,
-            mobile: res.data!.mobile,
-            avatarUrl: res.data!.avatarUrl,
-            notificationsEnabled: res.data!.notificationsEnabled,
-          );
-          return res.data!;
-        }
-      } catch (_) {}
-      return saved;
-    }
 
     try {
       final res = await ApiService.instance.get<UserProfileModel>(
@@ -508,14 +518,31 @@ class ApiAppRepository implements AppRepository {
         fromJsonT: (json) => UserProfileModel.fromJson(json as Map<String, dynamic>),
         requiresAuth: true,
       );
-      if (res.success && res.data != null) {
+      if (res.success && res.data != null && res.data!.name.isNotEmpty && res.data!.name != 'User') {
+        await AuthStorageService.instance.updateProfile(
+          name: res.data!.name,
+          email: res.data!.email,
+          mobile: res.data!.mobile,
+          avatarUrl: res.data!.avatarUrl,
+          notificationsEnabled: res.data!.notificationsEnabled,
+        );
         return res.data!;
       }
     } catch (e) {
       debugPrint('[ApiAppRepository getUserProfile Error] $e');
     }
 
-    return _mock.getUserProfile();
+    if (saved != null) {
+      return saved;
+    }
+
+    return const UserProfileModel(
+      name: 'User',
+      mobile: '',
+      email: '',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      notificationsEnabled: true,
+    );
   }
 
   @override

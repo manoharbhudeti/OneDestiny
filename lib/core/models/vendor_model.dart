@@ -24,7 +24,9 @@ class VendorModel {
   });
 
   factory VendorModel.fromJson(Map<String, dynamic> json, {bool isFavorite = false}) {
-    final coverImg = json['coverImageUrl']?.toString() ??
+    final coverImg = json['coverPhotoUrl']?.toString() ??
+        json['coverImageUrl']?.toString() ??
+        json['photoUrl']?.toString() ??
         json['logoUrl']?.toString() ??
         json['imageUrl']?.toString() ??
         '';

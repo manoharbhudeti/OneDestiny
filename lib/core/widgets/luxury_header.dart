@@ -314,35 +314,32 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                           child: AnimatedScale(
                             scale: _isAvatarPressed ? 0.92 : 1.0,
                             duration: const Duration(milliseconds: 150),
-                            child: Hero(
-                              tag: 'user-avatar',
-                              child: Material(
-                                color: Colors.transparent,
-                                shape: const CircleBorder(),
-                                clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  onTap: widget.onProfileTap,
-                                  customBorder: const CircleBorder(),
-                                  child: Container(
-                                    width: 34,
-                                    height: 34,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.accentGold,
-                                        width: 1.5,
+                            child: Material(
+                              color: Colors.transparent,
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: widget.onProfileTap,
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.accentGold,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
                                       ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.2),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipOval(
-                                      child: _buildHeaderAvatarImage(widget.avatarUrl),
-                                    ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: _buildHeaderAvatarImage(widget.avatarUrl),
                                   ),
                                 ),
                               ),

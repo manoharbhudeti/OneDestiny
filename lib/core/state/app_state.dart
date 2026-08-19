@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
 import '../models/booking_model.dart';
 import '../models/category_model.dart';
 import '../models/chat_model.dart';
@@ -14,15 +13,15 @@ import '../services/location_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState({AppRepository? repository}) : _repository = repository ?? ApiAppRepository() {
-    _flashCards = List<FlashCardModel>.of(MockData.flashCards);
-    _categories = List<CategoryModel>.of(MockData.categories);
-    _popularServices = List<ServiceModel>.of(MockData.popularServices);
-    _nearbyVendors = List<VendorModel>.of(MockData.nearbyVendors);
-    _trendingVendors = List<VendorModel>.of(MockData.trendingVendors);
+    _flashCards = [];
+    _categories = [];
+    _popularServices = [];
+    _nearbyVendors = [];
+    _trendingVendors = [];
     _profile = const UserProfileModel(
-      name: 'User',
-      mobile: '+91 98765 43210',
-      email: 'user@onedestiny.in',
+      name: '',
+      mobile: '',
+      email: '',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       notificationsEnabled: true,
     );
@@ -41,7 +40,7 @@ class AppState extends ChangeNotifier {
   List<VendorModel> _nearbyVendors = [];
   List<VendorModel> _trendingVendors = [];
   UserProfileModel _profile = const UserProfileModel(
-    name: 'User',
+    name: '',
     mobile: '',
     email: '',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -83,7 +82,12 @@ class AppState extends ChangeNotifier {
   bool get isLoadingBookings => _isLoadingBookings;
   bool get isLoadingChat => _isLoadingChat;
 
-  String get greeting => 'Hello, ${_profile.name} 👋';
+  String get greeting {
+    if (_profile.name.isNotEmpty && _profile.name != 'User') {
+      return 'Hello, ${_profile.name} 👋';
+    }
+    return 'Welcome to OneDestiny 👋';
+  }
   String get homeSelectedCategoryId => _homeSelectedCategoryId;
   String get exploreSelectedCategory => _exploreSelectedCategory;
 
@@ -140,6 +144,11 @@ class AppState extends ChangeNotifier {
       final savedLoc = await AuthStorageService.instance.getSavedLocation();
       if (savedLoc != null && savedLoc.isNotEmpty) {
         _activeLocation = savedLoc;
+      }
+      final savedProf = await AuthStorageService.instance.getSavedProfile();
+      if (savedProf != null) {
+        _profile = savedProf;
+        notifyListeners();
       }
 
       // 2. Fetch categories, flash cards, popular services

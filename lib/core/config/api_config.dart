@@ -1,23 +1,8 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
-
 class ApiConfig {
   ApiConfig._();
 
   /// Default backend base URL.
-  /// For Android emulator, localhost is 10.0.2.2.
-  /// For iOS simulator, web, or desktop, localhost is 127.0.0.1 / localhost.
-  static String get defaultBaseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5005';
-    }
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5005';
-      }
-    } catch (_) {}
-    return 'http://localhost:5005';
-  }
+  static const String defaultBaseUrl = 'https://dotnetlink.ndattasairam.com';
 
   static String _baseUrl = defaultBaseUrl;
   static String get baseUrl => _baseUrl;

@@ -20,7 +20,9 @@ class ChatConversationModel {
   });
 
   factory ChatConversationModel.fromJson(Map<String, dynamic> json) {
-    final rawTime = json['lastMessageTime']?.toString() ?? json['updatedAt']?.toString();
+    final rawTime = json['lastMessageAt']?.toString() ??
+        json['lastMessageTime']?.toString() ??
+        json['updatedAt']?.toString();
     String displayTime = 'Now';
     if (rawTime != null) {
       try {
@@ -42,16 +44,36 @@ class ChatConversationModel {
       }
     }
 
-    final avatar = json['vendorAvatarUrl']?.toString() ??
+    final avatar = json['otherPartyAvatarUrl']?.toString() ??
+        json['vendorAvatarUrl']?.toString() ??
         json['avatarUrl']?.toString() ??
         json['coverImageUrl']?.toString() ??
         '';
 
+    final id = json['otherPartyId']?.toString() ??
+        json['id']?.toString() ??
+        '';
+
+    final vendorId = json['otherPartyId']?.toString() ??
+        json['vendorProfileId']?.toString() ??
+        json['vendorId']?.toString() ??
+        '';
+
+    final name = json['otherPartyName']?.toString() ??
+        json['vendorBusinessName']?.toString() ??
+        json['vendorName']?.toString() ??
+        'Vendor';
+
+    final category = json['otherPartySubtitle']?.toString() ??
+        json['categoryName']?.toString() ??
+        json['vendorCategory']?.toString() ??
+        'Wedding Services';
+
     return ChatConversationModel(
-      id: json['id']?.toString() ?? '',
-      vendorId: json['vendorProfileId']?.toString() ?? json['vendorId']?.toString() ?? '',
-      vendorName: json['vendorBusinessName']?.toString() ?? json['vendorName']?.toString() ?? 'Vendor',
-      vendorCategory: json['categoryName']?.toString() ?? json['vendorCategory']?.toString() ?? 'Wedding Services',
+      id: id,
+      vendorId: vendorId,
+      vendorName: name,
+      vendorCategory: category,
       lastMessage: json['lastMessage']?.toString() ?? 'Start conversation...',
       time: displayTime,
       unreadCount: json['unreadCount'] as int? ?? 0,
@@ -114,13 +136,20 @@ class ChatMessageModel {
       }
     }
 
+    final isFromVendor = json['isFromVendor'] as bool?;
     final isMine = json['isMine'] as bool? ??
-        (currentUserId != null && json['senderId'] == currentUserId);
+        (isFromVendor != null
+            ? !isFromVendor
+            : (currentUserId != null &&
+                (json['userId'] == currentUserId || json['senderId'] == currentUserId)));
 
     return ChatMessageModel(
       id: json['id']?.toString() ?? '',
-      conversationId: json['conversationId']?.toString() ?? '',
-      text: json['text']?.toString() ?? json['content']?.toString() ?? '',
+      conversationId: json['conversationId']?.toString() ??
+          json['bookingId']?.toString() ??
+          json['vendorProfileId']?.toString() ??
+          '',
+      text: json['content']?.toString() ?? json['text']?.toString() ?? '',
       time: displayTime,
       isMine: isMine,
     );
