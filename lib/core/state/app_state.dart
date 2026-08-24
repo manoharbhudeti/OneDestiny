@@ -4,6 +4,9 @@ import '../models/booking_model.dart';
 import '../models/category_model.dart';
 import '../models/chat_model.dart';
 import '../models/flash_card_model.dart';
+import '../models/help_policy_model.dart';
+import '../models/notification_model.dart';
+import '../models/review_model.dart';
 import '../models/service_model.dart';
 import '../models/user_profile_model.dart';
 import '../models/vendor_model.dart';
@@ -20,6 +23,11 @@ class AppState extends ChangeNotifier {
     _profile = _repository.getUserProfile();
     _bookings = _repository.getBookings();
     _conversations = _repository.getConversations();
+    _reviews = _repository.getReviews();
+    _notifications = _repository.getNotifications();
+    _faqs = _repository.getFaqs();
+    _cancellationTiers = _repository.getCancellationTiers();
+    _policySections = _repository.getPolicySections();
   }
 
   final AppRepository _repository;
@@ -32,6 +40,11 @@ class AppState extends ChangeNotifier {
   late UserProfileModel _profile;
   late List<BookingModel> _bookings;
   late List<ChatConversationModel> _conversations;
+  late List<ReviewModel> _reviews;
+  late List<NotificationModel> _notifications;
+  late List<FaqItem> _faqs;
+  late List<CancellationTier> _cancellationTiers;
+  late List<PolicySection> _policySections;
   final Map<String, List<ChatMessageModel>> _messagesByConversation = {};
 
   String _homeSelectedCategoryId = 'all';
@@ -56,6 +69,32 @@ class AppState extends ChangeNotifier {
   UserProfileModel get profile => _profile;
   String get activeLocation => _activeLocation;
   int get conversationCount => _conversations.length;
+
+  List<NotificationModel> get notifications => List.unmodifiable(_notifications);
+  int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
+
+  List<FaqItem> get faqs => List.unmodifiable(_faqs);
+  List<CancellationTier> get cancellationTiers => List.unmodifiable(_cancellationTiers);
+  List<PolicySection> get policySections => List.unmodifiable(_policySections);
+
+  List<ReviewModel> reviewsForVendor(String vendorId) {
+    return List.unmodifiable(_reviews.where((r) => r.vendorId == vendorId).toList());
+  }
+
+  void markNotificationAsRead(String notificationId) {
+    _notifications = _notifications.map((n) {
+      if (n.id == notificationId) {
+        return n.copyWith(isRead: true);
+      }
+      return n;
+    }).toList(growable: false);
+    notifyListeners();
+  }
+
+  void markAllNotificationsAsRead() {
+    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList(growable: false);
+    notifyListeners();
+  }
 
   String get greeting => 'Hello, ${_profile.name} 👋';
   String get homeSelectedCategoryId => _homeSelectedCategoryId;

@@ -3,6 +3,9 @@ import '../models/booking_model.dart';
 import '../models/category_model.dart';
 import '../models/chat_model.dart';
 import '../models/flash_card_model.dart';
+import '../models/help_policy_model.dart';
+import '../models/notification_model.dart';
+import '../models/review_model.dart';
 import '../models/service_model.dart';
 import '../models/user_profile_model.dart';
 import '../models/vendor_model.dart';
@@ -17,6 +20,11 @@ abstract class AppRepository {
   List<BookingModel> getBookings();
   List<ChatConversationModel> getConversations();
   List<ChatMessageModel> getMessages(String conversationId);
+  List<ReviewModel> getReviews();
+  List<NotificationModel> getNotifications();
+  List<FaqItem> getFaqs();
+  List<CancellationTier> getCancellationTiers();
+  List<PolicySection> getPolicySections();
 }
 
 class MockAppRepository implements AppRepository {
@@ -149,4 +157,19 @@ class MockAppRepository implements AppRepository {
       ),
     ];
   }
+
+  @override
+  List<ReviewModel> getReviews() => List<ReviewModel>.of(MockData.reviews);
+
+  @override
+  List<NotificationModel> getNotifications() => List<NotificationModel>.of(MockData.notifications);
+
+  @override
+  List<FaqItem> getFaqs() => List<FaqItem>.of(MockData.faqs);
+
+  @override
+  List<CancellationTier> getCancellationTiers() => List<CancellationTier>.of(MockData.cancellationTiers);
+
+  @override
+  List<PolicySection> getPolicySections() => List<PolicySection>.of(MockData.policySections);
 }

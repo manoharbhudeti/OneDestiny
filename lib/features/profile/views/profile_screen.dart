@@ -10,6 +10,8 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/image_editor_screen.dart';
 import '../../../core/widgets/location_picker_sheet.dart';
 import '../../auth/views/login_screen.dart';
+import '../../help_policies/views/help_policies_screen.dart';
+import 'about_onedestiny_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -292,10 +294,30 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                   Divider(height: 1, color: borderColor),
                   ListTile(
                     leading: Icon(Icons.help_outline_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                    title: Text('Help & Support', style: AppTypography.subtitle(context).copyWith(fontSize: 14)),
-                    subtitle: Text('Concierge line, FAQs & Live Support', style: AppTypography.description(context, isSecondary: true)),
+                    title: Text('Help & Policies', style: AppTypography.subtitle(context).copyWith(fontSize: 14)),
+                    subtitle: Text('24/7 Concierge, FAQs, Refunds & Terms', style: AppTypography.description(context, isSecondary: true)),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _showHelpSupportModal(context),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const HelpPoliciesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: borderColor),
+                  ListTile(
+                    leading: Icon(Icons.info_outline_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    title: Text('About OneDestiny', style: AppTypography.subtitle(context).copyWith(fontSize: 14)),
+                    subtitle: Text('App version, build info & release notes', style: AppTypography.description(context, isSecondary: true)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AboutOneDestinyScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -318,33 +340,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 onTap: () => _showLogoutDialog(context),
               ),
             ),
-            const SizedBox(height: 36),
-            Center(
-              child: Column(
-                children: [
-                  Opacity(
-                    opacity: isDark ? 0.85 : 0.75,
-                    child: Image.asset(
-                      'assets/images/one_destiny_logo_transparent.png',
-                      height: 36,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        'assets/images/one_destiny_logo.png',
-                        height: 36,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Version 1.0.0+1 • Premium Experience',
-                    style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -726,62 +722,6 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) => _BookingHistoryTile(booking: bookings[index]),
                       ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showHelpSupportModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final bgSurface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
-
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bgSurface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SheetHandle(),
-              const SizedBox(height: 18),
-              Text('Help & Support Concierge', style: AppTypography.heading(context).copyWith(fontSize: 19)),
-              const SizedBox(height: 8),
-              Text(
-                'Need assistance with your event booking? Our dedicated OneDestiny concierge team is available 24/7.',
-                style: AppTypography.description(context, isSecondary: true),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.headset_mic_rounded, color: AppColors.accentGold),
-                title: const Text('Live Concierge Chat'),
-                subtitle: const Text('Chat with an event planning specialist'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => Navigator.pop(context),
-              ),
-              const Divider(),
-              const ListTile(
-                leading: Icon(Icons.phone_in_talk_rounded, color: AppColors.accentGold),
-                title: Text('Toll-Free Support Line'),
-                subtitle: Text('+91 1800 123 4567'),
-                trailing: Icon(Icons.chevron_right_rounded),
-              ),
-              const Divider(),
-              const ListTile(
-                leading: Icon(Icons.mail_outline_rounded, color: AppColors.accentGold),
-                title: Text('Email Support'),
-                subtitle: Text('support@onedestiny.com'),
-                trailing: Icon(Icons.chevron_right_rounded),
               ),
             ],
           ),

@@ -1,0 +1,27 @@
+{
+  "version": "V 24.8.26",
+  "build": 27,
+  "releaseDate": "2026-08-24",
+  "forceUpdate": false,
+  "minimumSupportedVersion": "V 24.8.26",
+  "developedBy": "Manohar & Datta",
+  "developers": [
+    {
+      "name": "Manohar",
+      "role": "Lead Developer",
+      "url": "https://www.linkedin.com/in/manoharbhudeti/"
+    },
+    {
+      "name": "Datta",
+      "role": "Developer",
+      "url": ""
+    }
+  ],
+  "releaseNotes": [
+    "Added Ratings & Reviews",
+    "Improved Notification Center",
+    "Added Help & Policies",
+    "Improved application performance",
+    "Fixed minor bugs and UI issues"
+  ]
+}

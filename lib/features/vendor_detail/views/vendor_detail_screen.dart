@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../chat/views/chat_detail_screen.dart';
 
+import '../../reviews/views/vendor_reviews_screen.dart';
+
 class VendorDetailScreen extends StatelessWidget {
   final VendorModel vendor;
 
@@ -22,6 +24,7 @@ class VendorDetailScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final surfaceColor = isDark ? AppColors.darkCardBg : AppColors.warmIvory;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final reviews = appState.reviewsForVendor(currentVendor.id);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -113,7 +116,20 @@ class VendorDetailScreen extends StatelessWidget {
                 [
                   Row(
                     children: [
-                      _InfoPill(icon: Icons.star_rounded, label: currentVendor.rating.toStringAsFixed(1)),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => VendorReviewsScreen(vendor: currentVendor),
+                            ),
+                          );
+                        },
+                        child: _InfoPill(
+                          icon: Icons.star_rounded,
+                          label: '${currentVendor.rating.toStringAsFixed(1)} (${reviews.length})',
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       _InfoPill(icon: Icons.location_on_outlined, label: '${currentVendor.distanceKm} km'),
                       const SizedBox(width: 10),
@@ -126,6 +142,67 @@ class VendorDetailScreen extends StatelessWidget {
                   Text(
                     '${currentVendor.name} offers premium ${currentVendor.category.toLowerCase()} services for weddings, birthdays, corporate events, and private celebrations around ${currentVendor.location}.',
                     style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Customer Reviews', style: AppTypography.subtitle(context).copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => VendorReviewsScreen(vendor: currentVendor),
+                            ),
+                          );
+                        },
+                        child: const Text('View All ›', style: TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VendorReviewsScreen(vendor: currentVendor),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: surfaceColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.rate_review_rounded, color: AppColors.accentGold, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${currentVendor.rating.toStringAsFixed(1)} out of 5.0 Star Rating',
+                                  style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Based on ${reviews.isEmpty ? 'verified customer' : '${reviews.length} verified'} reviews',
+                                  style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded, color: AppColors.accentGold),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text('Packages', style: AppTypography.subtitle(context).copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
@@ -196,7 +273,7 @@ class VendorDetailScreen extends StatelessWidget {
                         backgroundColor: AppColors.darkPrimaryBurgundy,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        content: Text('Booking request created for ${currentVendor.name}.'),
+                        content: Text('Booking request created for ${currentVendor.name}.\n⚠️ Safety Note: Do not pay advance amounts upfront without vendor confirmation.'),
                       ),
                     );
                   },
