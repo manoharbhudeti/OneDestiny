@@ -420,19 +420,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             child: const Text('No, Keep'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final bookingId = _currentBooking.id;
+              await AppStateScope.read(context).cancelBooking(bookingId);
+              if (!context.mounted) return;
               setState(() {
-                _currentBooking = BookingModel(
-                  id: _currentBooking.id,
-                  vendorId: _currentBooking.vendorId,
-                  title: _currentBooking.title,
-                  category: _currentBooking.category,
-                  dateLabel: _currentBooking.dateLabel,
-                  location: _currentBooking.location,
-                  amount: _currentBooking.amount,
-                  status: 'CANCELLED',
-                  imageUrl: _currentBooking.imageUrl,
-                );
+                _currentBooking = _currentBooking.copyWith(status: 'CANCELLED');
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(

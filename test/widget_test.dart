@@ -80,8 +80,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(500, 1000));
 
     await tester.pumpWidget(const OneDestinyApp());
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Hello, Manohar 👋'), findsOneWidget);
+    expect(find.text('MAKE EVERY CELEBRATION IN ONE PLACE'), findsOneWidget);
   });
 }

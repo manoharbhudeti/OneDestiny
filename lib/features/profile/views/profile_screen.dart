@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/models/booking_model.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -61,25 +62,22 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       // Avatar with Edit Image Camera Badge
                       Stack(
                         children: [
-                          Hero(
-                            tag: 'user-avatar',
-                            child: Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.accentGold, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: _buildProfileAvatarImage(profile.avatarUrl),
-                              ),
+                          Container(
+                            width: 68,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.accentGold, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _buildProfileAvatarImage(profile.avatarUrl),
                             ),
                           ),
                           Positioned(
@@ -747,7 +745,9 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await AuthService.instance.logout();
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(

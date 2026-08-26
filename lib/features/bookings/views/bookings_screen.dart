@@ -67,10 +67,14 @@ class _BookingsScreenState extends State<BookingsScreen> with AutomaticKeepAlive
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          child: Column(
+        child: RefreshIndicator(
+          color: AppColors.accentGold,
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          onRefresh: () => appState.refreshBookings(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Vendor Calendar Highlight View (Toggleable)
@@ -151,8 +155,9 @@ class _BookingsScreenState extends State<BookingsScreen> with AutomaticKeepAlive
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFilterChip(String statusKey, String label, bool isDark) {
     final isSelected = _selectedStatusFilter == statusKey;

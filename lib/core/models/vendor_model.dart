@@ -23,6 +23,32 @@ class VendorModel {
     this.isFavorite = false,
   });
 
+  factory VendorModel.fromJson(Map<String, dynamic> json, {bool isFavorite = false}) {
+    final coverImg = json['coverPhotoUrl']?.toString() ??
+        json['coverImageUrl']?.toString() ??
+        json['photoUrl']?.toString() ??
+        json['logoUrl']?.toString() ??
+        json['imageUrl']?.toString() ??
+        '';
+
+    return VendorModel(
+      id: json['id']?.toString() ?? '',
+      name: json['businessName']?.toString() ?? json['name']?.toString() ?? '',
+      category: json['categoryName']?.toString() ?? json['category']?.toString() ?? 'General',
+      rating: (json['averageRating'] as num?)?.toDouble() ??
+          (json['rating'] as num?)?.toDouble() ??
+          4.8,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 2.5,
+      startingPrice: (json['startingPrice'] as num?)?.toDouble() ?? 0.0,
+      location: json['baseLocation']?.toString() ?? json['location']?.toString() ?? 'India',
+      imageUrl: coverImg.isNotEmpty
+          ? coverImg
+          : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+      isTrending: json['isFeatured'] as bool? ?? json['isTrending'] as bool? ?? false,
+      isFavorite: isFavorite,
+    );
+  }
+
   VendorModel copyWith({
     String? id,
     String? name,

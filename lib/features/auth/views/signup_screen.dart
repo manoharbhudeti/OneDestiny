@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import 'otp_verification_screen.dart';
@@ -35,18 +36,23 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() {
-    if (_nameCtrl.text.isEmpty || _emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) {
+  Future<void> _signup() async {
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    final pass = _passCtrl.text;
+
+    if (name.isEmpty || email.isEmpty || pass.isEmpty) {
       _showSnack('Please fill in all required fields');
       return;
     }
 
-    if (_phoneCtrl.text.length != 10) {
+    if (phone.length != 10) {
       _showSnack('Please enter a valid 10-digit mobile number');
       return;
     }
 
-    if (_passCtrl.text.length < 8) {
+    if (pass.length < 8) {
       _showSnack('Password must be at least 8 characters');
       return;
     }
@@ -58,21 +64,38 @@ class _SignupScreenState extends State<SignupScreen> {
 
     setState(() => _loading = true);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      final res = await AuthService.instance.signup(
+        name: name,
+        email: email,
+        phone: phone,
+        password: pass,
+      );
+
       if (!mounted) return;
       setState(() => _loading = false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OtpVerificationScreen(
-            themeModeNotifier: widget.themeModeNotifier,
-            email: _emailCtrl.text.trim(),
-            phone: _phoneCtrl.text.trim(),
-            isEmail: true,
+
+      if (res.success) {
+        _showSnack(res.message.isNotEmpty ? res.message : 'Account created! Please verify OTP.');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpVerificationScreen(
+              themeModeNotifier: widget.themeModeNotifier,
+              email: email,
+              phone: phone,
+              isEmail: true,
+            ),
           ),
-        ),
-      );
-    });
+        );
+      } else {
+        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Signup failed. Please try again.'));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showSnack('Signup failed. Please check your connection.');
+    }
   }
 
   void _showSnack(String message) {
