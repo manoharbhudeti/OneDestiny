@@ -1,11 +1,17 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/state/app_state.dart';
 import 'core/state/app_state_scope.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/views/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
   runApp(const OneDestinyApp());
 }
 

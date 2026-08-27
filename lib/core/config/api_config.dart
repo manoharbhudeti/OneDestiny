@@ -13,7 +13,7 @@ class ApiConfig {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5005';
+        return 'https://api.onedestiny.org';
       }
     } catch (_) {}
     return 'http://localhost:5005';

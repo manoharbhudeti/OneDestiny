@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../main/views/main_navigation_screen.dart';
 import 'otp_verification_screen.dart';
 import 'signup_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  FirebaseAuth get auth => FirebaseAuth.instance;
 
   bool _agreed = false;
   bool _loading = false;
@@ -53,12 +55,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
 
     try {
-      final res = await AuthService.instance.sendPhoneOtp(phone);
+      //final res = await AuthService.instance.sendPhoneOtp(phone);
+      final res = null;
+      print("sending otp");
+      sendOtp("+91$phone");
       if (!mounted) return;
       setState(() => _loading = false);
 
       if (res.success) {
-        _showSnack(res.message.isNotEmpty ? res.message : 'OTP sent successfully!');
+        _showSnack(
+            res.message.isNotEmpty ? res.message : 'OTP sent successfully!');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -70,13 +76,38 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
-        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Failed to send OTP. Please try again.'));
+        _showSnack(res.errors.isNotEmpty
+            ? res.errors.first
+            : (res.message.isNotEmpty
+                ? res.message
+                : 'Failed to send OTP. Please try again.'));
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
       _showSnack('An error occurred. Please try again.');
     }
+  }
+
+  Future<void> sendOtp(String phoneNumber) async {
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await auth.signInWithCredential(credential);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        print('OTP failed: ${e.code}');
+        print(e.message);
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        // Save this ID.
+        // Navigate to your OTP screen.
+        print('Verification ID: $verificationId');
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        print('OTP auto retrieval timeout');
+      },
+    );
   }
 
   Future<void> _loginWithPassword() async {
@@ -96,7 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
 
     try {
-      final res = await AuthService.instance.login(email: email, password: password);
+      final res =
+          await AuthService.instance.login(email: email, password: password);
       if (!mounted) return;
       setState(() => _loading = false);
 
@@ -108,12 +140,17 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
+            builder: (_) => MainNavigationScreen(
+                themeModeNotifier: widget.themeModeNotifier),
           ),
           (route) => false,
         );
       } else {
-        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid credentials. Please try again.'));
+        _showSnack(res.errors.isNotEmpty
+            ? res.errors.first
+            : (res.message.isNotEmpty
+                ? res.message
+                : 'Invalid credentials. Please try again.'));
       }
     } catch (e) {
       if (!mounted) return;
@@ -136,10 +173,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final logoWidth = (MediaQuery.of(context).size.width * 0.55).clamp(180.0, 260.0);
+    final logoWidth =
+        (MediaQuery.of(context).size.width * 0.55).clamp(180.0, 260.0);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -181,7 +220,8 @@ class _LoginScreenState extends State<LoginScreen> {
               // OTP / Password Segmented Tab Toggle
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : const Color(0xFFF0E4DE),
+                  color:
+                      isDark ? AppColors.darkSurface : const Color(0xFFF0E4DE),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 padding: const EdgeInsets.all(4),
@@ -230,11 +270,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   suffix: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.accentGold,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
               ],
@@ -262,7 +305,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text.rich(
                       TextSpan(
                         text: 'By continuing, you agree to our ',
-                        style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
+                        style: AppTypography.description(context,
+                                isSecondary: true)
+                            .copyWith(fontSize: 12),
                         children: const [
                           TextSpan(
                             text: 'Privacy Policy',
@@ -293,7 +338,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : (_usePassword ? _loginWithPassword : _sendOtp),
+                  onPressed: _loading
+                      ? null
+                      : (_usePassword ? _loginWithPassword : _sendOtp),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBurgundy,
                     foregroundColor: Colors.white,
@@ -306,7 +353,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.white),
                         )
                       : Text(
                           _usePassword ? 'LOGIN' : 'SEND OTP',
@@ -327,14 +375,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     "Don't have an account? ",
-                    style: AppTypography.description(context, isSecondary: true),
+                    style:
+                        AppTypography.description(context, isSecondary: true),
                   ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => SignupScreen(themeModeNotifier: widget.themeModeNotifier),
+                          builder: (_) => SignupScreen(
+                              themeModeNotifier: widget.themeModeNotifier),
                         ),
                       );
                     },
@@ -358,7 +408,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => MainNavigationScreen(themeModeNotifier: widget.themeModeNotifier),
+                      builder: (_) => MainNavigationScreen(
+                          themeModeNotifier: widget.themeModeNotifier),
                     ),
                     (route) => false,
                   );
@@ -456,14 +507,17 @@ class _AuthTextField extends StatelessWidget {
         suffixIcon: suffix,
         filled: true,
         fillColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          borderSide: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          borderSide: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
