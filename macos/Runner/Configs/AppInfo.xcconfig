@@ -8,7 +8,7 @@
 PRODUCT_NAME = one_destiny_customer_app
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.onedestiny.customer.oneDestinyCustomerApp
+PRODUCT_BUNDLE_IDENTIFIER = com.OneDestiny.customer
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.onedestiny.customer. All rights reserved.

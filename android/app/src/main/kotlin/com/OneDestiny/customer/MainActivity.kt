@@ -1,4 +1,4 @@
-package com.onedestiny.customer.one_destiny_customer_app
+package com.OneDestiny.customer
 
 import io.flutter.embedding.android.FlutterActivity
 

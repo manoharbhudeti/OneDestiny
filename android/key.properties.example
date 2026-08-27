@@ -1,0 +1,6 @@
+# Keystore properties for signing Android release builds
+# Place your real key.properties in the android/ directory (ignored by git)
+storePassword=onedestiny@2026
+keyPassword=onedestiny@2026
+keyAlias=upload
+storeFile=upload-keystore.jks

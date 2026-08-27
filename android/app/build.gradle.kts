@@ -1,11 +1,15 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
+    id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
-    namespace = "com.onedestiny.customer.one_destiny_customer_app"
+    namespace = "com.OneDestiny.customer"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +20,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.onedestiny.customer.one_destiny_customer_app"
+        applicationId = "com.OneDestiny.customer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -25,11 +29,35 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keyPropFile = rootProject.file("key.properties")
+            if (keyPropFile.exists()) {
+                val keyProps = Properties()
+                keyProps.load(FileInputStream(keyPropFile))
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+                val storeFilePath = keyProps.getProperty("storeFile")
+                storeFile = if (file(storeFilePath).exists()) {
+                    file(storeFilePath)
+                } else if (file("../$storeFilePath").exists()) {
+                    file("../$storeFilePath")
+                } else {
+                    rootProject.file(storeFilePath)
+                }
+                storePassword = keyProps.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            val keyPropFile = rootProject.file("key.properties")
+            signingConfig = if (keyPropFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
