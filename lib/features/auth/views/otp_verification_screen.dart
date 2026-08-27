@@ -13,11 +13,14 @@ class OtpVerificationScreen extends StatefulWidget {
   final String? email;
   final bool isEmail;
 
+  final String? verificationId;
+
   const OtpVerificationScreen({
     super.key,
     required this.themeModeNotifier,
     this.phone = '',
     this.email,
+    this.verificationId,
     this.isEmail = false,
   });
 
@@ -26,8 +29,9 @@ class OtpVerificationScreen extends StatefulWidget {
 }
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
-  final List<TextEditingController> _pinControllers = List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  late final int _pinLength;
+  late final List<TextEditingController> _pinControllers;
+  late final List<FocusNode> _focusNodes;
 
   bool _loading = false;
   int _seconds = 30;
@@ -36,6 +40,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   @override
   void initState() {
     super.initState();
+    _pinLength = widget.verificationId != null ? 6 : 4;
+    _pinControllers = List.generate(_pinLength, (_) => TextEditingController());
+    _focusNodes = List.generate(_pinLength, (_) => FocusNode());
     _startTimer();
   }
 
@@ -68,8 +75,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String get _otpCode => _pinControllers.map((c) => c.text).join();
 
   Future<void> _verifyOtp() async {
-    if (_otpCode.length != 4) {
-      _showSnack('Please enter full 4-digit OTP code');
+    if (_otpCode.length != _pinLength) {
+      _showSnack('Please enter full $_pinLength-digit OTP code');
       return;
     }
 
@@ -79,6 +86,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (widget.isEmail) {
         final email = widget.email ?? '';
         final res = await AuthService.instance.verifyEmailOtp(email: email, otp: _otpCode);
+        if (!mounted) return;
+        setState(() => _loading = false);
+
+        if (res.success) {
+          AppStateScope.read(context).refreshProfile();
+          AppStateScope.read(context).refreshBookings();
+          _navigateToHome();
+        } else {
+          _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
+        }
+      } else if (widget.verificationId != null) {
+        final phone = widget.phone;
+        final res = await AuthService.instance.firebasePhoneLogin(
+          phone: phone,
+          verificationId: widget.verificationId!,
+          otp: _otpCode,
+        );
         if (!mounted) return;
         setState(() => _loading = false);
 
@@ -204,19 +228,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               Text(
                 widget.isEmail
                     ? 'Check your email! OTP code sent to\n$target'
-                    : 'Please enter 4-digit code sent to\n$target',
+                    : 'Please enter $_pinLength-digit code sent to\n$target',
                 textAlign: TextAlign.center,
                 style: AppTypography.description(context, isSecondary: true),
               ),
 
               const SizedBox(height: 36),
 
-              // 4-Digit PIN Input Boxes Row
+              // PIN Input Boxes Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(4, (index) {
+                children: List.generate(_pinLength, (index) {
                   return SizedBox(
-                    width: 58,
+                    width: _pinLength == 6 ? 48 : 58,
                     height: 62,
                     child: TextField(
                       controller: _pinControllers[index],

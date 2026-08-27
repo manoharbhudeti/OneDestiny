@@ -13,7 +13,7 @@ class ApiConfig {
     }
     try {
       if (Platform.isAndroid) {
-        return 'https://api.onedestiny.org';
+        return 'https://new-testing-one.ndattasairam.com';
       }
     } catch (_) {}
     return 'http://localhost:5005';
@@ -33,6 +33,8 @@ class ApiConfig {
   // Auth endpoints
   static String get phoneSendOtp => '$_baseUrl/api/auth/phone/send-otp';
   static String get phoneVerifyOtp => '$_baseUrl/api/auth/phone/verify-otp';
+  static String get phoneFirebaseLogin =>
+      '$_baseUrl/api/auth/phone/firebase-login';
   static String get login => '$_baseUrl/api/auth/login';
   static String get signup => '$_baseUrl/api/auth/signup';
   static String get verifyEmail => '$_baseUrl/api/auth/verify-email';
@@ -45,20 +47,31 @@ class ApiConfig {
 
   // Client / Vendors
   static String get clientVendors => '$_baseUrl/api/client/vendors';
-  static String clientVendorProfile(int id) => '$_baseUrl/api/client/vendors/$id';
-  static String clientVendorServices(int id) => '$_baseUrl/api/client/vendors/$id/services';
-  static String clientVendorPortfolio(int id) => '$_baseUrl/api/client/vendors/$id/portfolio';
-  static String clientVendorReviews(int id) => '$_baseUrl/api/client/vendors/$id/reviews';
-  static String clientVendorInquire(int id) => '$_baseUrl/api/client/vendors/$id/inquire';
-  static String clientVendorBook(int id) => '$_baseUrl/api/client/vendors/$id/book';
-  static String clientVendorReview(int id) => '$_baseUrl/api/client/vendors/$id/review';
+  static String clientVendorProfile(int id) =>
+      '$_baseUrl/api/client/vendors/$id';
+  static String clientVendorServices(int id) =>
+      '$_baseUrl/api/client/vendors/$id/services';
+  static String clientVendorPortfolio(int id) =>
+      '$_baseUrl/api/client/vendors/$id/portfolio';
+  static String clientVendorReviews(int id) =>
+      '$_baseUrl/api/client/vendors/$id/reviews';
+  static String clientVendorInquire(int id) =>
+      '$_baseUrl/api/client/vendors/$id/inquire';
+  static String clientVendorBook(int id) =>
+      '$_baseUrl/api/client/vendors/$id/book';
+  static String clientVendorReview(int id) =>
+      '$_baseUrl/api/client/vendors/$id/review';
 
   // Client Bookings
   static String get clientBookings => '$_baseUrl/api/client/bookings';
-  static String clientBookingDetail(int id) => '$_baseUrl/api/client/bookings/$id';
-  static String clientBookingCancel(int id) => '$_baseUrl/api/client/bookings/$id/cancel';
-  static String clientBookingCreatePaymentOrder(int id) => '$_baseUrl/api/client/bookings/$id/create-payment-order';
-  static String clientBookingVerifyPayment(int id) => '$_baseUrl/api/client/bookings/$id/verify-payment';
+  static String clientBookingDetail(int id) =>
+      '$_baseUrl/api/client/bookings/$id';
+  static String clientBookingCancel(int id) =>
+      '$_baseUrl/api/client/bookings/$id/cancel';
+  static String clientBookingCreatePaymentOrder(int id) =>
+      '$_baseUrl/api/client/bookings/$id/create-payment-order';
+  static String clientBookingVerifyPayment(int id) =>
+      '$_baseUrl/api/client/bookings/$id/verify-payment';
 
   // Chat
   static String get chatConversations => '$_baseUrl/api/chat/conversations';

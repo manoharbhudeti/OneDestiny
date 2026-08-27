@@ -55,33 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
 
     try {
-      //final res = await AuthService.instance.sendPhoneOtp(phone);
-      final res = null;
-      print("sending otp");
-      sendOtp("+91$phone");
-      if (!mounted) return;
-      setState(() => _loading = false);
-
-      if (res.success) {
-        _showSnack(
-            res.message.isNotEmpty ? res.message : 'OTP sent successfully!');
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OtpVerificationScreen(
-              themeModeNotifier: widget.themeModeNotifier,
-              phone: phone,
-              isEmail: false,
-            ),
-          ),
-        );
-      } else {
-        _showSnack(res.errors.isNotEmpty
-            ? res.errors.first
-            : (res.message.isNotEmpty
-                ? res.message
-                : 'Failed to send OTP. Please try again.'));
-      }
+      await sendOtp('+91$phone', phone);
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -89,23 +63,41 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> sendOtp(String phoneNumber) async {
+  Future<void> sendOtp(String phoneNumber, String rawPhone) async {
+    try {
+      await auth.setSettings(appVerificationDisabledForTesting: true);
+    } catch (_) {}
+
     await auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (PhoneAuthCredential credential) async {
         await auth.signInWithCredential(credential);
       },
       verificationFailed: (FirebaseAuthException e) {
-        print('OTP failed: ${e.code}');
-        print(e.message);
+        debugPrint('OTP failed: ${e.code} - ${e.message}');
+        if (!mounted) return;
+        setState(() => _loading = false);
+        _showSnack(e.message ?? 'Phone verification failed (${e.code})');
       },
       codeSent: (String verificationId, int? resendToken) {
-        // Save this ID.
-        // Navigate to your OTP screen.
-        print('Verification ID: $verificationId');
+        debugPrint('Verification ID: $verificationId');
+        if (!mounted) return;
+        setState(() => _loading = false);
+        _showSnack('OTP sent successfully!');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpVerificationScreen(
+              themeModeNotifier: widget.themeModeNotifier,
+              phone: rawPhone,
+              verificationId: verificationId,
+              isEmail: false,
+            ),
+          ),
+        );
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        print('OTP auto retrieval timeout');
+        debugPrint('OTP auto retrieval timeout: $verificationId');
       },
     );
   }

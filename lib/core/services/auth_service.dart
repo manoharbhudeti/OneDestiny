@@ -58,6 +58,33 @@ class AuthService {
     return res;
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> firebasePhoneLogin({
+    required String phone,
+    required String verificationId,
+    required String otp,
+  }) async {
+    final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
+
+    final res = await ApiService.instance.post<Map<String, dynamic>>(
+      url: ApiConfig.phoneFirebaseLogin,
+      body: {
+        'phone': formattedPhone,
+        'verificationId': verificationId,
+        'otp': otp,
+        'deviceName': 'Flutter Client',
+        'deviceOs': _deviceOs,
+      },
+      fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
+      requiresAuth: false,
+    );
+
+    if (res.success && res.data != null) {
+      await _saveAuthResponse(res.data!);
+    }
+
+    return res;
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> login({
     required String email,
     required String password,
