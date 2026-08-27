@@ -13,6 +13,20 @@ class UserProfileModel {
     this.notificationsEnabled = true,
   });
 
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    return UserProfileModel(
+      name: json['fullName']?.toString() ?? json['name']?.toString() ?? 'User',
+      mobile: json['phoneNumber']?.toString() ?? json['phone']?.toString() ?? json['mobile']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      avatarUrl: json['profileImageUrl']?.toString() ??
+          json['avatarUrl']?.toString() ??
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      notificationsEnabled: json['notificationsEnabled'] as bool? ??
+          json['pushNotificationsEnabled'] as bool? ??
+          true,
+    );
+  }
+
   UserProfileModel copyWith({
     String? name,
     String? mobile,

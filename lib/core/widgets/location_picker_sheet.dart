@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/location_backend_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -21,7 +22,7 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
   bool _isDetectingGps = false;
   String? _gpsCoordinatesText;
 
-  final List<Map<String, dynamic>> _popularCities = [
+  List<Map<String, dynamic>> _popularCities = [
     {'name': 'Hyderabad', 'lat': 17.3850, 'lng': 78.4867, 'state': 'Telangana'},
     {'name': 'Bangalore', 'lat': 12.9716, 'lng': 77.5946, 'state': 'Karnataka'},
     {'name': 'Mumbai', 'lat': 19.0760, 'lng': 72.8777, 'state': 'Maharashtra'},
@@ -29,6 +30,28 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
     {'name': 'Chennai', 'lat': 13.0827, 'lng': 80.2707, 'state': 'Tamil Nadu'},
     {'name': 'Pune', 'lat': 18.5204, 'lng': 73.8567, 'state': 'Maharashtra'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBackendCities();
+  }
+
+  Future<void> _loadBackendCities() async {
+    try {
+      final cities = await LocationBackendService.instance.getCities();
+      if (cities.isNotEmpty && mounted) {
+        setState(() {
+          _popularCities = cities.map((c) => {
+            'name': c.name,
+            'lat': c.latitude != 0.0 ? c.latitude : 17.3850,
+            'lng': c.longitude != 0.0 ? c.longitude : 78.4867,
+            'state': 'India',
+          }).toList();
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> _handleGpsFetch() async {
     setState(() {
