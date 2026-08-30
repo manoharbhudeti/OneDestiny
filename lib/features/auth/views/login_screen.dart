@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
@@ -21,6 +22,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final String widgetId = '36656f6b4e79333236353235'; // Your widgetId
+  final String authToken = '466881TQOgsU8Xoj6a927f7aP1'; // Your authToken
+
+  String phoneNumber = '';
+
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,6 +35,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _usePassword = false;
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    OTPWidget.initializeWidget(widgetId, authToken); // Initialize widget
+  }
 
   @override
   void dispose() {
@@ -50,14 +62,15 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    phoneNumber = phone;
     setState(() => _loading = true);
 
     try {
-      final res = await AuthService.instance.sendPhoneOtp(phone);
+      final res = await AuthService.instance.sendMsg91Otp(phone);
       if (!mounted) return;
       setState(() => _loading = false);
 
-      if (res.success) {
+      if (res.success && res.data != null && res.data!.isNotEmpty) {
         _showSnack(res.message.isNotEmpty ? res.message : 'OTP sent successfully!');
         Navigator.push(
           context,
@@ -65,17 +78,21 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (_) => OtpVerificationScreen(
               themeModeNotifier: widget.themeModeNotifier,
               phone: phone,
+              reqId: res.data!,
               isEmail: false,
+              isMsg91: true,
             ),
           ),
         );
       } else {
-        _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Failed to send OTP. Please try again.'));
+        _showSnack(res.errors.isNotEmpty
+            ? res.errors.first
+            : (res.message.isNotEmpty ? res.message : 'Failed to send OTP. Please try again.'));
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _showSnack('An error occurred. Please try again.');
+      _showSnack('An error occurred while sending OTP. Please try again.');
     }
   }
 

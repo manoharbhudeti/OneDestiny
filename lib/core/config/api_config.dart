@@ -2,7 +2,7 @@ class ApiConfig {
   ApiConfig._();
 
   /// Default backend base URL.
-  static const String defaultBaseUrl = 'https://dotnetlink.ndattasairam.com';
+  static const String defaultBaseUrl = 'https://api.onedestiny.org';
 
   static String _baseUrl = defaultBaseUrl;
   static String get baseUrl => _baseUrl;
@@ -18,6 +18,7 @@ class ApiConfig {
   // Auth endpoints
   static String get phoneSendOtp => '$_baseUrl/api/auth/phone/send-otp';
   static String get phoneVerifyOtp => '$_baseUrl/api/auth/phone/verify-otp';
+  static String get verifyMsg91Token => '$_baseUrl/api/auth/msg91/verify';
   static String get login => '$_baseUrl/api/auth/login';
   static String get signup => '$_baseUrl/api/auth/signup';
   static String get verifyEmail => '$_baseUrl/api/auth/verify-email';

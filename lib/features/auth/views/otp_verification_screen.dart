@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/network/api_response.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
@@ -12,6 +13,8 @@ class OtpVerificationScreen extends StatefulWidget {
   final String phone;
   final String? email;
   final bool isEmail;
+  final String? reqId;
+  final bool isMsg91;
 
   const OtpVerificationScreen({
     super.key,
@@ -19,6 +22,8 @@ class OtpVerificationScreen extends StatefulWidget {
     this.phone = '',
     this.email,
     this.isEmail = false,
+    this.reqId,
+    this.isMsg91 = false,
   });
 
   @override
@@ -32,10 +37,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _loading = false;
   int _seconds = 30;
   Timer? _timer;
+  String? _currentReqId;
 
   @override
   void initState() {
     super.initState();
+    _currentReqId = widget.reqId;
     _startTimer();
   }
 
@@ -89,6 +96,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
         }
+      } else if (widget.isMsg91 && _currentReqId != null && _currentReqId!.isNotEmpty) {
+        // MSG91 OTP verification & backend token exchange
+        final res = await AuthService.instance.loginWithMsg91Otp(
+          reqId: _currentReqId!,
+          otp: _otpCode,
+          createIfNotExists: true,
+        );
+        if (!mounted) return;
+        setState(() => _loading = false);
+
+        if (res.success) {
+          AppStateScope.read(context).refreshProfile();
+          AppStateScope.read(context).refreshBookings();
+          _navigateToHome();
+        } else {
+          _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
+        }
       } else {
         final phone = widget.phone;
         final res = await AuthService.instance.verifyPhoneOtp(phone, _otpCode);
@@ -115,13 +139,32 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     _startTimer();
 
     try {
-      if (!widget.isEmail) {
-        final res = await AuthService.instance.sendPhoneOtp(widget.phone);
+      if (widget.isEmail) {
+        _showSnack('New OTP code sent to your email.');
+      } else if (widget.isMsg91) {
+        ApiResponse<String> res;
+        if (_currentReqId != null && _currentReqId!.isNotEmpty) {
+          res = await AuthService.instance.retryMsg91Otp(reqId: _currentReqId!);
+          if (!res.success) {
+            res = await AuthService.instance.sendMsg91Otp(widget.phone);
+            if (res.success && res.data != null && res.data!.isNotEmpty) {
+              _currentReqId = res.data;
+            }
+          }
+        } else {
+          res = await AuthService.instance.sendMsg91Otp(widget.phone);
+          if (res.success && res.data != null && res.data!.isNotEmpty) {
+            _currentReqId = res.data;
+          }
+        }
         if (mounted) {
           _showSnack(res.message.isNotEmpty ? res.message : 'OTP resent successfully!');
         }
       } else {
-        _showSnack('New OTP code sent to your email.');
+        final res = await AuthService.instance.sendPhoneOtp(widget.phone);
+        if (mounted) {
+          _showSnack(res.message.isNotEmpty ? res.message : 'OTP resent successfully!');
+        }
       }
     } catch (_) {
       if (mounted) {

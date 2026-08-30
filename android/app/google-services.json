@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "682186122285",
+    "project_id": "onedestiny-d52c5",
+    "storage_bucket": "onedestiny-d52c5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:682186122285:android:4728a7edad91199dde84a4",
+        "android_client_info": {
+          "package_name": "com.OneDestiny.vendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBA0EzRJ_ZrPk_53LgSGKSNmMB6WBH2Tr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:682186122285:android:16163dee4049cf4ede84a4",
+        "android_client_info": {
+          "package_name": "com.onedestiny.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBA0EzRJ_ZrPk_53LgSGKSNmMB6WBH2Tr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
