@@ -21,20 +21,32 @@ class LocationPickerBottomSheet extends StatefulWidget {
 class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
   bool _isDetectingGps = false;
   String? _gpsCoordinatesText;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   List<Map<String, dynamic>> _popularCities = [
     {'name': 'Hyderabad', 'lat': 17.3850, 'lng': 78.4867, 'state': 'Telangana'},
-    {'name': 'Bangalore', 'lat': 12.9716, 'lng': 77.5946, 'state': 'Karnataka'},
+    {'name': 'Bengaluru', 'lat': 12.9716, 'lng': 77.5946, 'state': 'Karnataka'},
     {'name': 'Mumbai', 'lat': 19.0760, 'lng': 72.8777, 'state': 'Maharashtra'},
     {'name': 'Delhi NCR', 'lat': 28.7041, 'lng': 77.1025, 'state': 'Delhi'},
     {'name': 'Chennai', 'lat': 13.0827, 'lng': 80.2707, 'state': 'Tamil Nadu'},
     {'name': 'Pune', 'lat': 18.5204, 'lng': 73.8567, 'state': 'Maharashtra'},
+    {'name': 'Kolkata', 'lat': 22.5726, 'lng': 88.3639, 'state': 'West Bengal'},
+    {'name': 'Jaipur', 'lat': 26.9124, 'lng': 75.7873, 'state': 'Rajasthan'},
+    {'name': 'Ahmedabad', 'lat': 23.0225, 'lng': 72.5714, 'state': 'Gujarat'},
+    {'name': 'Chandigarh', 'lat': 30.7333, 'lng': 76.7794, 'state': 'Punjab'},
   ];
 
   @override
   void initState() {
     super.initState();
     _loadBackendCities();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadBackendCities() async {
@@ -46,7 +58,7 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
             'name': c.name,
             'lat': c.latitude != 0.0 ? c.latitude : 17.3850,
             'lng': c.longitude != 0.0 ? c.longitude : 78.4867,
-            'state': 'India',
+            'state': c.stateName ?? 'India',
           }).toList();
         });
       }
@@ -109,19 +121,28 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
     final bgSurface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
+    final filteredCities = _searchQuery.trim().isEmpty
+        ? _popularCities
+        : _popularCities.where((c) {
+            final name = (c['name'] as String).toLowerCase();
+            final state = (c['state'] as String).toLowerCase();
+            final query = _searchQuery.toLowerCase();
+            return name.contains(query) || state.contains(query);
+          }).toList();
+
     return Container(
+      height: MediaQuery.of(context).size.height * 0.78,
       decoration: BoxDecoration(
         color: bgSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.only(
-        top: 20,
+        top: 16,
         left: 20,
         right: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Handle Indicator
@@ -135,7 +156,7 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
           // Modal Title
           Row(
@@ -143,7 +164,7 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
             children: [
               Text(
                 'Select Event Location',
-                style: AppTypography.heading(context).copyWith(fontSize: 19),
+                style: AppTypography.heading(context).copyWith(fontSize: 18),
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -153,14 +174,14 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
 
-          // Detect GPS Location Button (With Lat/Long Permission Flow)
+          // Detect GPS Location Button
           InkWell(
             onTap: _isDetectingGps ? null : _handleGpsFetch,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.primaryBurgundy.withValues(alpha: isDark ? 0.3 : 0.08),
                 borderRadius: BorderRadius.circular(16),
@@ -179,8 +200,8 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
                     ),
                     child: _isDetectingGps
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
+                            width: 16,
+                            height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(AppColors.darkBurgundy),
@@ -189,10 +210,10 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
                         : const Icon(
                             Icons.my_location_rounded,
                             color: AppColors.darkBurgundy,
-                            size: 20,
+                            size: 18,
                           ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,81 +221,134 @@ class _LocationPickerBottomSheetState extends State<LocationPickerBottomSheet> {
                         Text(
                           _isDetectingGps ? 'Fetching GPS Coordinates...' : 'Use Current Location (GPS)',
                           style: AppTypography.subtitle(context).copyWith(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: isDark ? AppColors.accentGold : AppColors.primaryBurgundy,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _gpsCoordinatesText ?? 'Automatically fetch Latitude & Longitude',
-                          style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
+                          _gpsCoordinatesText ?? 'Automatically fetch coordinates & address',
+                          style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.accentGold),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.accentGold, size: 20),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
-          Text(
-            'Popular Event Cities',
-            style: AppTypography.subtitle(context).copyWith(fontSize: 14),
+          // Search Field for Cities
+          TextField(
+            controller: _searchController,
+            onChanged: (val) {
+              setState(() {
+                _searchQuery = val;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Search city or state...',
+              hintStyle: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
+              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.accentGold),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              filled: true,
+              fillColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5),
+              ),
+            ),
           ),
 
           const SizedBox(height: 12),
 
-          // City Grid Options
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _popularCities.length,
-            separatorBuilder: (context, index) => Divider(height: 1, color: borderColor),
-            itemBuilder: (context, index) {
-              final city = _popularCities[index];
-              final isSelected = widget.currentSelection.contains(city['name'] as String);
+          Text(
+            'Cities (${filteredCities.length})',
+            style: AppTypography.subtitle(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
 
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                leading: Icon(
-                  Icons.location_city_rounded,
-                  color: isSelected ? AppColors.accentGold : (isDark ? Colors.white60 : Colors.black54),
-                  size: 20,
-                ),
-                title: Text(
-                  city['name'] as String,
-                  style: AppTypography.subtitle(context).copyWith(
-                    fontSize: 15,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.accentGold : null,
+          const SizedBox(height: 8),
+
+          // City List inside Expanded
+          Expanded(
+            child: filteredCities.isEmpty
+                ? Center(
+                    child: Text(
+                      'No matching cities found',
+                      style: AppTypography.description(context, isSecondary: true),
+                    ),
+                  )
+                : ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: filteredCities.length,
+                    separatorBuilder: (context, index) => Divider(height: 1, color: borderColor.withValues(alpha: 0.5)),
+                    itemBuilder: (context, index) {
+                      final city = filteredCities[index];
+                      final isSelected = widget.currentSelection.toLowerCase().contains((city['name'] as String).toLowerCase());
+
+                      return ListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        leading: Icon(
+                          Icons.location_city_rounded,
+                          color: isSelected ? AppColors.accentGold : (isDark ? Colors.white60 : Colors.black54),
+                          size: 18,
+                        ),
+                        title: Text(
+                          city['name'] as String,
+                          style: AppTypography.subtitle(context).copyWith(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? AppColors.accentGold : null,
+                          ),
+                        ),
+                        subtitle: Text(
+                          city['state'] as String,
+                          style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle_rounded, color: AppColors.accentGold, size: 20)
+                            : null,
+                        onTap: () {
+                          final selectedResult = LocationResult(
+                            latitude: (city['lat'] as num).toDouble(),
+                            longitude: (city['lng'] as num).toDouble(),
+                            formattedAddress: '${city['name']}, ${city['state']}',
+                            isGpsLocation: false,
+                          );
+                          widget.onLocationSelected(selectedResult);
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
                   ),
-                ),
-                subtitle: Text(
-                  '${city['state']} • Lat: ${city['lat']}°, Lng: ${city['lng']}°',
-                  style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11),
-                ),
-                trailing: isSelected
-                    ? const Icon(Icons.check_circle_rounded, color: AppColors.accentGold, size: 22)
-                    : null,
-                onTap: () {
-                  final selectedResult = LocationResult(
-                    latitude: city['lat'] as double,
-                    longitude: city['lng'] as double,
-                    formattedAddress: '${city['name']}, India',
-                    isGpsLocation: false,
-                  );
-                  widget.onLocationSelected(selectedResult);
-                  Navigator.of(context).pop();
-                },
-              );
-            },
           ),
         ],
       ),
     );
   }
 }
+

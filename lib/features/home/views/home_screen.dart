@@ -89,67 +89,139 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 ),
               ),
 
-              const SizedBox(height: 14),
-
-              AddCardsCarousel(
-                cards: appState.flashCards,
-                autoScrollInterval: const Duration(milliseconds: 1800),
-                onCardTap: (card) {
-                  if (card.targetCategoryId != null) {
-                    appState.selectHomeCategory(card.targetCategoryId!);
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Selected Offer: ${card.title}', style: AppTypography.description(context)),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 18),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Popular Services',
-                  style: AppTypography.subtitle(context).copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                height: 106,
-                child: ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: appState.popularServices.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final service = appState.popularServices[index];
-                    return PopularServiceCard(
-                      service: service,
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Selected service: ${service.title}', style: AppTypography.description(context)),
-                            duration: const Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                      },
-                    );
+              if (appState.flashCards.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                AddCardsCarousel(
+                  cards: appState.flashCards,
+                  autoScrollInterval: const Duration(milliseconds: 1800),
+                  onCardTap: (card) {
+                    if (card.targetCategoryId != null) {
+                      appState.selectHomeCategory(card.targetCategoryId!);
+                    }
                   },
                 ),
-              ),
+              ],
+
+              if (appState.categories.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Categories',
+                        style: AppTypography.subtitle(context).copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => widget.onNavigateToTab?.call(1),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Explore All',
+                          style: AppTypography.description(
+                            context,
+                            customColor: primaryColor,
+                          ).copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 40,
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: appState.categories.length + 1,
+                    itemBuilder: (context, index) {
+                      final isAll = index == 0;
+                      final cat = isAll ? null : appState.categories[index - 1];
+                      final catId = isAll ? 'all' : cat!.id;
+                      final catTitle = isAll ? 'All' : cat!.title;
+                      final isSelected = appState.homeSelectedCategoryId == catId;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(catTitle),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? (isDark ? Colors.black : Colors.white)
+                                : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                          ),
+                          selectedColor: AppColors.accentGold,
+                          backgroundColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                            ),
+                          ),
+                          onSelected: (_) => appState.selectHomeCategory(catId),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              if (appState.popularServices.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    'Popular Services',
+                    style: AppTypography.subtitle(context).copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 106,
+                  child: ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: appState.popularServices.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final service = appState.popularServices[index];
+                      return PopularServiceCard(
+                        service: service,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Selected service: ${service.title}', style: AppTypography.description(context)),
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 22),
 
@@ -196,39 +268,74 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
               const SizedBox(height: 10),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: displayVendors.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final vendor = displayVendors[index];
-                    return TrendingVendorCard(
-                      vendor: vendor,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => VendorDetailScreen(vendor: vendor),
-                          ),
-                        );
-                      },
-                      onBookNowTap: () {
-                        AppStateScope.read(context).createBookingForVendor(vendor);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Booking requested for ${vendor.name}', style: AppTypography.description(context)),
-                            duration: const Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                      },
-                    );
-                  },
+              if (appState.isLoadingInitial || appState.isLoadingVendors)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 36),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.accentGold),
+                  ),
+                )
+              else if (displayVendors.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.storefront_outlined,
+                          size: 48,
+                          color: AppColors.accentGold.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No vendors found in ${appState.activeLocation}',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.subtitle(context).copyWith(fontSize: 15),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Change your location or category filter to discover more verified vendors.',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: displayVendors.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+                      final vendor = displayVendors[index];
+                      return TrendingVendorCard(
+                        vendor: vendor,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => VendorDetailScreen(vendor: vendor),
+                            ),
+                          );
+                        },
+                        onBookNowTap: () {
+                          AppStateScope.read(context).createBookingForVendor(vendor);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Booking requested for ${vendor.name}', style: AppTypography.description(context)),
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),

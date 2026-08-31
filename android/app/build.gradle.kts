@@ -9,12 +9,16 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-dependencies {
-  implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
-  implementation("com.google.firebase:firebase-analytics")
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
+    implementation("com.google.firebase:firebase-analytics")
+}
 android {
     namespace = "com.OneDestiny.customer"
     compileSdk = flutter.compileSdkVersion
@@ -38,30 +42,31 @@ android {
 
     signingConfigs {
         create("release") {
-            val keyPropFile = rootProject.file("key.properties")
-            if (keyPropFile.exists()) {
-                val keyProps = Properties()
-                keyProps.load(FileInputStream(keyPropFile))
-                keyAlias = keyProps.getProperty("keyAlias")
-                keyPassword = keyProps.getProperty("keyPassword")
-                val storeFilePath = keyProps.getProperty("storeFile")
-                storeFile = if (file(storeFilePath).exists()) {
-                    file(storeFilePath)
-                } else if (file("../$storeFilePath").exists()) {
-                    file("../$storeFilePath")
+            val keyAliasProp = keystoreProperties.getProperty("keyAlias")
+            val keyPasswordProp = keystoreProperties.getProperty("keyPassword")
+            val storeFileProp = keystoreProperties.getProperty("storeFile")
+            val storePasswordProp = keystoreProperties.getProperty("storePassword")
+
+            if (keyAliasProp != null && keyPasswordProp != null && storeFileProp != null && storePasswordProp != null) {
+                keyAlias = keyAliasProp
+                keyPassword = keyPasswordProp
+                storeFile = if (file(storeFileProp).exists()) {
+                    file(storeFileProp)
+                } else if (file("../$storeFileProp").exists()) {
+                    file("../$storeFileProp")
                 } else {
-                    rootProject.file(storeFilePath)
+                    rootProject.file(storeFileProp)
                 }
-                storePassword = keyProps.getProperty("storePassword")
+                storePassword = storePasswordProp
             }
         }
     }
 
     buildTypes {
         release {
-            val keyPropFile = rootProject.file("key.properties")
-            signingConfig = if (keyPropFile.exists()) {
-                signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            signingConfig = if (releaseSigning.storeFile != null) {
+                releaseSigning
             } else {
                 signingConfigs.getByName("debug")
             }
@@ -71,7 +76,7 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

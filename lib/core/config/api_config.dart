@@ -1,23 +1,7 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
-
 class ApiConfig {
   ApiConfig._();
 
-  /// Default backend base URL.
-  /// For Android emulator, localhost is 10.0.2.2.
-  /// For iOS simulator, web, or desktop, localhost is 127.0.0.1 / localhost.
-  static String get defaultBaseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5005';
-    }
-    try {
-      if (Platform.isAndroid) {
-        return 'https://new-testing-one.ndattasairam.com';
-      }
-    } catch (_) {}
-    return 'http://localhost:5005';
-  }
+  static const String defaultBaseUrl = 'https://api.onedestiny.org';
 
   static String _baseUrl = defaultBaseUrl;
   static String get baseUrl => _baseUrl;
@@ -33,6 +17,7 @@ class ApiConfig {
   // Auth endpoints
   static String get phoneSendOtp => '$_baseUrl/api/auth/phone/send-otp';
   static String get phoneVerifyOtp => '$_baseUrl/api/auth/phone/verify-otp';
+  static String get verifyMsg91Token => '$_baseUrl/api/auth/msg91/verify';
   static String get phoneFirebaseLogin =>
       '$_baseUrl/api/auth/phone/firebase-login';
   static String get login => '$_baseUrl/api/auth/login';

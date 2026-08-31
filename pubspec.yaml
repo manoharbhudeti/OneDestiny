@@ -43,6 +43,7 @@ dependencies:
   shared_preferences: ^2.2.3
   firebase_core: ^4.14.0
   firebase_auth: ^6.6.1
+  sendotp_flutter_sdk: ^0.0.2
 
 dev_dependencies:
   flutter_test:

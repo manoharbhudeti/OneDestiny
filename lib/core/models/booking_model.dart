@@ -37,22 +37,35 @@ class BookingModel {
       }
     }
 
-    final agreedAmount = (json['agreedAmount'] as num?)?.toDouble() ?? 0.0;
-    final formattedAmount = agreedAmount > 0 ? '₹${agreedAmount.toInt()}' : 'Quote pending';
+    final totalAmount = (json['amount'] as num?)?.toDouble() ??
+        (json['agreedAmount'] as num?)?.toDouble() ??
+        0.0;
+    final formattedAmount = totalAmount > 0 ? '₹${totalAmount.toInt()}' : 'Quote pending';
 
-    final coverImg = json['vendorCoverImageUrl']?.toString() ??
+    final coverImg = json['vendorCoverPhotoUrl']?.toString() ??
+        json['vendorCoverImageUrl']?.toString() ??
         json['imageUrl']?.toString() ??
         '';
+
+    final statusStr = json['statusName']?.toString() ??
+        json['status']?.toString() ??
+        'PENDING';
 
     return BookingModel(
       id: json['id']?.toString() ?? '',
       vendorId: json['vendorProfileId']?.toString() ?? json['vendorId']?.toString() ?? '',
       title: json['vendorBusinessName']?.toString() ?? json['title']?.toString() ?? '',
-      category: json['categoryName']?.toString() ?? json['category']?.toString() ?? 'Wedding Service',
+      category: json['vendorCategoryName']?.toString() ??
+          json['categoryName']?.toString() ??
+          json['category']?.toString() ??
+          'Wedding Service',
       dateLabel: formattedDate,
-      location: json['eventLocation']?.toString() ?? json['location']?.toString() ?? 'Location pending',
+      location: json['venue']?.toString() ??
+          json['eventLocation']?.toString() ??
+          json['location']?.toString() ??
+          'Location pending',
       amount: formattedAmount,
-      status: (json['status']?.toString() ?? 'REQUESTED').toUpperCase(),
+      status: statusStr.toUpperCase(),
       imageUrl: coverImg.isNotEmpty
           ? coverImg
           : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=400&q=80',
