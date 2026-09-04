@@ -268,6 +268,7 @@ class AuthService {
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.login,
       body: {
+        'UserRole':"User",
         'email': email.trim().toLowerCase(),
         'password': password,
         'deviceName': 'Flutter Client',

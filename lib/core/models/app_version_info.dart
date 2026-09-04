@@ -51,36 +51,36 @@ class AppVersionInfo {
   factory AppVersionInfo.fromJson(Map<String, dynamic> json) {
     List<DeveloperInfo> devList = [];
 
-    if (json['developers'] is List) {
-      devList = (json['developers'] as List)
-          .map((item) => DeveloperInfo.fromJson(item))
-          .toList();
-    } else if (json['Developed By'] != null || json['developedBy'] != null) {
-      final devStr = (json['Developed By'] ?? json['developedBy']).toString();
-      final names = devStr.split(RegExp(r'\s*&\s*|\s*,\s*'));
-      devList = names.map((name) {
-        final cleanName = name.trim();
-        if (cleanName.toLowerCase().contains('manohar')) {
-          return const DeveloperInfo(
-            name: 'Manohar',
-            role: 'Lead Developer',
-            url: 'https://www.linkedin.com/in/manoharbhudeti/',
-          );
-        }
-        return DeveloperInfo(name: cleanName, role: 'Developer');
-      }).toList();
-    }
+    // if (json['developers'] is List) {
+    //   devList = (json['developers'] as List)
+    //       .map((item) => DeveloperInfo.fromJson(item))
+    //       .toList();
+    // } else if (json['Developed By'] != null || json['developedBy'] != null) {
+    //   final devStr = (json['Developed By'] ?? json['developedBy']).toString();
+    //   final names = devStr.split(RegExp(r'\s*&\s*|\s*,\s*'));
+    //   devList = names.map((name) {
+    //     final cleanName = name.trim();
+    //     if (cleanName.toLowerCase().contains('manohar')) {
+    //       return const DeveloperInfo(
+    //         name: 'Manohar',
+    //         role: 'Lead Developer',
+    //         url: 'https://www.linkedin.com/in/manoharbhudeti/',
+    //       );
+    //     }
+    //     return DeveloperInfo(name: cleanName, role: 'Developer');
+    //   }).toList();
+    // }
 
-    if (devList.isEmpty) {
-      devList = const [
-        DeveloperInfo(
-          name: 'Manohar',
-          role: 'Lead Developer',
-          url: 'https://www.linkedin.com/in/manoharbhudeti/',
-        ),
-        DeveloperInfo(name: 'Datta', role: 'Developer'),
-      ];
-    }
+    // if (devList.isEmpty) {
+    //   devList = const [
+    //     DeveloperInfo(
+    //       name: 'Manohar',
+    //       role: 'Lead Developer',
+    //       url: 'https://www.linkedin.com/in/manoharbhudeti/',
+    //     ),
+    //     DeveloperInfo(name: 'Datta', role: 'Developer'),
+    //   ];
+    // }
 
     return AppVersionInfo(
       version: json['version'] as String? ?? 'V 24.8.26',
@@ -88,9 +88,12 @@ class AppVersionInfo {
       releaseDate: json['releaseDate'] as String? ?? '2026-08-24',
       forceUpdate: json['forceUpdate'] as bool? ?? false,
       minimumSupportedVersion: json['minimumSupportedVersion'] as String? ?? 'V 24.8.26',
+      // developedBy: json['developedBy'] as String? ??
+      //     json['Developed By'] as String? ??
+      //     'Manohar & Datta',
       developedBy: json['developedBy'] as String? ??
           json['Developed By'] as String? ??
-          'Manohar & Datta',
+          '',
       developers: devList,
       releaseNotes: (json['releaseNotes'] as List<dynamic>?)
               ?.map((item) => item.toString())
