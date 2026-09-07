@@ -532,6 +532,7 @@ class ApiAppRepository implements AppRepository {
           email: res.data!.email,
           mobile: res.data!.mobile,
           avatarUrl: res.data!.avatarUrl,
+          location: res.data!.location,
           notificationsEnabled: res.data!.notificationsEnabled,
         );
         return res.data!;

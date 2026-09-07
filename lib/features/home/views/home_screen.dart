@@ -288,13 +288,13 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'No vendors found in ${appState.activeLocation}',
+                          'No vendors found',
                           textAlign: TextAlign.center,
                           style: AppTypography.subtitle(context).copyWith(fontSize: 15),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Change your location or category filter to discover more verified vendors.',
+                          'Change your search or category filter to discover more verified vendors.',
                           textAlign: TextAlign.center,
                           style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
                         ),

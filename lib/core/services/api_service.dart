@@ -80,6 +80,7 @@ class ApiService {
       debugPrint('[API GET Paged] $uri');
 
       final response = await _client.get(uri, headers: headers).timeout(_timeout);
+      debugPrint('[API GET Paged Response ${response.statusCode}] ${response.body}');
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = json.decode(utf8.decode(response.bodyBytes));
         if (decoded is Map<String, dynamic>) {

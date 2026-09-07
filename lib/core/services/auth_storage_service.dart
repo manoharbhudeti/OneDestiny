@@ -16,6 +16,7 @@ class AuthStorageService {
   static const String _keyNotificationsEnabled = 'notifications_enabled';
   static const String _keyFavorites = 'favorite_vendor_ids';
   static const String _keyActiveLocation = 'active_location';
+  static const String _keyUserLocation = 'user_location';
 
   SharedPreferences? _prefs;
 
@@ -32,6 +33,7 @@ class AuthStorageService {
     String? phone,
     String role = 'User',
     String? avatarUrl,
+    String? location,
   }) async {
     final prefs = await _getPrefs;
     await prefs.setString(_keyToken, token);
@@ -41,6 +43,7 @@ class AuthStorageService {
     if (phone != null) await prefs.setString(_keyUserPhone, phone);
     await prefs.setString(_keyUserRole, role);
     if (avatarUrl != null) await prefs.setString(_keyUserAvatar, avatarUrl);
+    if (location != null) await prefs.setString(_keyUserLocation, location);
     await prefs.setBool(_keyIsLoggedIn, true);
   }
 
@@ -65,6 +68,7 @@ class AuthStorageService {
       mobile: prefs.getString(_keyUserPhone) ?? '',
       avatarUrl: prefs.getString(_keyUserAvatar) ??
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      location: prefs.getString(_keyUserLocation) ?? prefs.getString(_keyActiveLocation) ?? '',
       notificationsEnabled: prefs.getBool(_keyNotificationsEnabled) ?? true,
     );
   }
@@ -74,6 +78,7 @@ class AuthStorageService {
     String? email,
     String? mobile,
     String? avatarUrl,
+    String? location,
     bool? notificationsEnabled,
   }) async {
     final prefs = await _getPrefs;
@@ -81,6 +86,7 @@ class AuthStorageService {
     if (email != null) await prefs.setString(_keyUserEmail, email);
     if (mobile != null) await prefs.setString(_keyUserPhone, mobile);
     if (avatarUrl != null) await prefs.setString(_keyUserAvatar, avatarUrl);
+    if (location != null) await prefs.setString(_keyUserLocation, location);
     if (notificationsEnabled != null) {
       await prefs.setBool(_keyNotificationsEnabled, notificationsEnabled);
     }
@@ -120,6 +126,7 @@ class AuthStorageService {
     await prefs.remove(_keyUserEmail);
     await prefs.remove(_keyUserPhone);
     await prefs.remove(_keyUserRole);
+    await prefs.remove(_keyUserLocation);
     await prefs.setBool(_keyIsLoggedIn, false);
   }
 }

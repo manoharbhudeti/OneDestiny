@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class ApiResponse<T> {
   final bool success;
   final T? data;
@@ -77,17 +79,52 @@ class PagedResponse<T> {
     Map<String, dynamic> json,
     T Function(dynamic json) fromJsonItem,
   ) {
-    final rawItems = json['items'] as List<dynamic>? ?? [];
-    final items = rawItems.map((e) => fromJsonItem(e)).toList();
+    Map<String, dynamic> source = json;
+    List<dynamic> rawItems = [];
+
+    if (json['data'] is Map<String, dynamic>) {
+      source = json['data'] as Map<String, dynamic>;
+      if (source['items'] is List) {
+        rawItems = source['items'] as List<dynamic>;
+      } else if (source['data'] is List) {
+        rawItems = source['data'] as List<dynamic>;
+      }
+    } else if (json['data'] is List) {
+      rawItems = json['data'] as List<dynamic>;
+    } else if (json['items'] is List) {
+      rawItems = json['items'] as List<dynamic>;
+    }
+
+    final items = <T>[];
+    for (final e in rawItems) {
+      try {
+        items.add(fromJsonItem(e));
+      } catch (err) {
+        debugPrint('[PagedResponse parse item error] $err');
+      }
+    }
+
+    final totalCount = source['totalCount'] as int? ??
+        json['totalCount'] as int? ??
+        items.length;
+    final page = source['page'] as int? ?? json['page'] as int? ?? 1;
+    final pageSize = source['pageSize'] as int? ?? json['pageSize'] as int? ?? 20;
+    final totalPages = source['totalPages'] as int? ?? json['totalPages'] as int? ?? 1;
+    final hasPreviousPage = source['hasPreviousPage'] as bool? ??
+        json['hasPreviousPage'] as bool? ??
+        false;
+    final hasNextPage = source['hasNextPage'] as bool? ??
+        json['hasNextPage'] as bool? ??
+        false;
 
     return PagedResponse<T>(
       items: items,
-      totalCount: json['totalCount'] as int? ?? items.length,
-      page: json['page'] as int? ?? 1,
-      pageSize: json['pageSize'] as int? ?? 20,
-      totalPages: json['totalPages'] as int? ?? 1,
-      hasPreviousPage: json['hasPreviousPage'] as bool? ?? false,
-      hasNextPage: json['hasNextPage'] as bool? ?? false,
+      totalCount: totalCount,
+      page: page,
+      pageSize: pageSize,
+      totalPages: totalPages,
+      hasPreviousPage: hasPreviousPage,
+      hasNextPage: hasNextPage,
     );
   }
 }

@@ -187,6 +187,9 @@ class AppState extends ChangeNotifier {
       final savedProf = await AuthStorageService.instance.getSavedProfile();
       if (savedProf != null) {
         _profile = savedProf;
+        if ((savedLoc == null || savedLoc.isEmpty) && savedProf.location.isNotEmpty) {
+          _activeLocation = savedProf.location;
+        }
         notifyListeners();
       }
 
@@ -215,6 +218,9 @@ class AppState extends ChangeNotifier {
       _flashCards = results[1] as List<FlashCardModel>;
       _popularServices = results[2] as List<ServiceModel>;
       _profile = results[3] as UserProfileModel;
+      if (_profile.location.isNotEmpty && (savedLoc == null || savedLoc.isEmpty)) {
+        _activeLocation = _profile.location;
+      }
       _bookings = results[4] as List<BookingModel>;
       _conversations = results[5] as List<ChatConversationModel>;
       _trendingVendors = results[6] as List<VendorModel>;
@@ -279,6 +285,10 @@ class AppState extends ChangeNotifier {
   Future<void> refreshProfile() async {
     try {
       _profile = await _repository.getUserProfile();
+      final savedLoc = await AuthStorageService.instance.getSavedLocation();
+      if (_profile.location.isNotEmpty && (savedLoc == null || savedLoc.isEmpty)) {
+        _activeLocation = _profile.location;
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('[AppState refreshProfile Error] $e');

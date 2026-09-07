@@ -430,26 +430,26 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
 
               // Skip & Browse as Guest Option
-              TextButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MainNavigationScreen(
-                          themeModeNotifier: widget.themeModeNotifier),
-                    ),
-                    (route) => false,
-                  );
-                },
-                child: const Text(
-                  'Continue as Guest →',
-                  style: TextStyle(
-                    color: AppColors.accentGold,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.pushAndRemoveUntil(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (_) => MainNavigationScreen(
+              //             themeModeNotifier: widget.themeModeNotifier),
+              //       ),
+              //       (route) => false,
+              //     );
+              //   },
+              //   child: const Text(
+              //     'Continue as Guest →',
+              //     style: TextStyle(
+              //       color: AppColors.accentGold,
+              //       fontSize: 13,
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              // ),
 
               const SizedBox(height: 24),
             ],
