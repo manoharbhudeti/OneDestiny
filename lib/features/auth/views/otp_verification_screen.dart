@@ -17,6 +17,7 @@ class OtpVerificationScreen extends StatefulWidget {
   final bool isMsg91;
 
   final String? verificationId;
+  final int pinLength;
 
   const OtpVerificationScreen({
     super.key,
@@ -27,6 +28,7 @@ class OtpVerificationScreen extends StatefulWidget {
     this.isEmail = false,
     this.reqId,
     this.isMsg91 = false,
+    this.pinLength = 6,
   });
 
   @override
@@ -47,7 +49,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void initState() {
     super.initState();
     _currentReqId = widget.reqId;
-    _pinLength = widget.verificationId != null ? 6 : 4;
+    _pinLength = widget.pinLength;
     _pinControllers = List.generate(_pinLength, (_) => TextEditingController());
     _focusNodes = List.generate(_pinLength, (_) => FocusNode());
     _startTimer();
@@ -160,6 +162,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   Future<void> _handleResend() async {
     if (_seconds > 0) return;
+    for (final c in _pinControllers) {
+      c.clear();
+    }
+    if (_focusNodes.isNotEmpty) {
+      _focusNodes.first.requestFocus();
+    }
     _startTimer();
 
     try {
@@ -270,7 +278,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               const SizedBox(height: 8),
               Text(
                 widget.isEmail
-                    ? 'Check your email! OTP code sent to\n$target'
+                    ? 'Check your email! Please enter $_pinLength-digit OTP sent to\n$target'
                     : 'Please enter $_pinLength-digit code sent to\n$target',
                 textAlign: TextAlign.center,
                 style: AppTypography.description(context, isSecondary: true),
@@ -279,60 +287,120 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               const SizedBox(height: 36),
 
               // PIN Input Boxes Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_pinLength, (index) {
-                  return SizedBox(
-                    width: _pinLength == 6 ? 48 : 58,
-                    height: 62,
-                    child: TextField(
-                      controller: _pinControllers[index],
-                      focusNode: _focusNodes[index],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accentGold,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(1),
-                      ],
-                      onChanged: (value) {
-                        if (value.isNotEmpty && index < 3) {
-                          _focusNodes[index + 1].requestFocus();
-                        } else if (value.isEmpty && index > 0) {
-                          _focusNodes[index - 1].requestFocus();
-                        }
-                        if (_otpCode.length == 4) {
-                          _verifyOtp();
-                        }
-                      },
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final spacing = _pinLength == 6 ? 8.0 : 12.0;
+                  final totalSpacing = spacing * (_pinLength - 1);
+                  final boxWidth = ((constraints.maxWidth - totalSpacing) / _pinLength).clamp(36.0, 52.0);
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_pinLength, (index) {
+                      return Container(
+                        margin: EdgeInsets.only(right: index < _pinLength - 1 ? spacing : 0),
+                        width: boxWidth,
+                        height: 60,
+                        child: Focus(
+                          onKeyEvent: (node, event) {
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.backspace) {
+                              if (_pinControllers[index].text.isEmpty && index > 0) {
+                                _pinControllers[index - 1].clear();
+                                _focusNodes[index - 1].requestFocus();
+                                return KeyEventResult.handled;
+                              }
+                            }
+                            return KeyEventResult.ignored;
+                          },
+                          child: TextField(
+                            controller: _pinControllers[index],
+                            focusNode: _focusNodes[index],
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.accentGold,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            onChanged: (value) {
+                              if (value.length > 1) {
+                                final digits = value.replaceAll(RegExp(r'[^\d]'), '');
+                                if (digits.length >= 4) {
+                                  // Pasted OTP code
+                                  final startIndex = digits.length >= _pinLength ? 0 : index;
+                                  for (int i = 0; i < digits.length && (startIndex + i) < _pinLength; i++) {
+                                    _pinControllers[startIndex + i].text = digits[i];
+                                  }
+                                  final lastFilled = (startIndex + digits.length - 1).clamp(0, _pinLength - 1);
+                                  if (_otpCode.length == _pinLength) {
+                                    FocusScope.of(context).unfocus();
+                                    _verifyOtp();
+                                  } else if (lastFilled < _pinLength - 1) {
+                                    _focusNodes[lastFilled + 1].requestFocus();
+                                  }
+                                  return;
+                                } else if (digits.isNotEmpty) {
+                                  // User replaced digit in already-filled box
+                                  final lastChar = digits.substring(digits.length - 1);
+                                  _pinControllers[index].text = lastChar;
+                                  _pinControllers[index].selection =
+                                      TextSelection.collapsed(offset: lastChar.length);
+                                  if (index < _pinLength - 1) {
+                                    _focusNodes[index + 1].requestFocus();
+                                  } else {
+                                    FocusScope.of(context).unfocus();
+                                  }
+                                  if (_otpCode.length == _pinLength) {
+                                    _verifyOtp();
+                                  }
+                                  return;
+                                }
+                              }
+
+                              if (value.isNotEmpty) {
+                                if (index < _pinLength - 1) {
+                                  _focusNodes[index + 1].requestFocus();
+                                } else {
+                                  FocusScope.of(context).unfocus();
+                                }
+                              } else if (value.isEmpty && index > 0) {
+                                _focusNodes[index - 1].requestFocus();
+                              }
+
+                              if (_otpCode.length == _pinLength) {
+                                _verifyOtp();
+                              }
+                            },
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: isDark ? AppColors.darkCardBg : AppColors.warmIvory,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(
+                                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(
+                                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: AppColors.accentGold, width: 2.0),
+                              ),
+                            ),
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.accentGold, width: 2.0),
-                        ),
-                      ),
-                    ),
+                      );
+                    }),
                   );
-                }),
+                },
               ),
 
               const SizedBox(height: 24),

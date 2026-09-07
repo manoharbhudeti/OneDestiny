@@ -163,7 +163,9 @@ class AuthService {
         'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
         'createIfNotExists': createIfNotExists,
+        'userRole': role,
         'role': role,
+        'UserRole': role,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -181,6 +183,7 @@ class AuthService {
     required String reqId,
     required String otp,
     bool createIfNotExists = true,
+    String role = 'User',
   }) async {
     final verifyRes = await verifyMsg91Otp(reqId: reqId, otp: otp);
     if (!verifyRes.success || verifyRes.data == null || verifyRes.data!.isEmpty) {
@@ -194,6 +197,7 @@ class AuthService {
     return await verifyMsg91TokenWithBackend(
       verifyRes.data!,
       createIfNotExists: createIfNotExists,
+      role: role,
     );
   }
 
@@ -212,7 +216,11 @@ class AuthService {
     return res;
   }
 
-  Future<ApiResponse<Map<String, dynamic>>> verifyPhoneOtp(String phone, String otp) async {
+  Future<ApiResponse<Map<String, dynamic>>> verifyPhoneOtp(
+    String phone,
+    String otp, {
+    String userRole = 'User',
+  }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
 
     final res = await ApiService.instance.post<Map<String, dynamic>>(
@@ -220,7 +228,10 @@ class AuthService {
       body: {
         'phone': formattedPhone,
         'otp': otp,
-        'deviceName': 'Flutter Client',
+        'userRole': userRole,
+        'role': userRole,
+        'UserRole': userRole,
+        'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
@@ -238,6 +249,7 @@ class AuthService {
     required String phone,
     required String verificationId,
     required String otp,
+    String userRole = 'User',
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
 
@@ -247,7 +259,10 @@ class AuthService {
         'phone': formattedPhone,
         'verificationId': verificationId,
         'otp': otp,
-        'deviceName': 'Flutter Client',
+        'userRole': userRole,
+        'role': userRole,
+        'UserRole': userRole,
+        'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
@@ -264,14 +279,17 @@ class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> login({
     required String email,
     required String password,
+    String userRole = 'User',
   }) async {
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.login,
       body: {
-        'UserRole':"User",
         'email': email.trim().toLowerCase(),
         'password': password,
-        'deviceName': 'Flutter Client',
+        'userRole': userRole,
+        'role': userRole,
+        'UserRole': userRole,
+        'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
@@ -290,6 +308,7 @@ class AuthService {
     required String email,
     required String phone,
     required String password,
+    String role = 'User',
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
 
@@ -300,7 +319,10 @@ class AuthService {
         'email': email.trim().toLowerCase(),
         'phone': formattedPhone,
         'password': password,
-        'role': 'User',
+        'role': role,
+        'Role': role,
+        'userRole': role,
+        'UserRole': role,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -319,13 +341,17 @@ class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> verifyEmailOtp({
     required String email,
     required String otp,
+    String userRole = 'User',
   }) async {
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.verifyEmail,
       body: {
         'email': email.trim().toLowerCase(),
         'otp': otp,
-        'deviceName': 'Flutter Client',
+        'userRole': userRole,
+        'role': userRole,
+        'UserRole': userRole,
+        'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
