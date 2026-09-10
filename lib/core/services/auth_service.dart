@@ -5,6 +5,7 @@ import '../config/api_config.dart';
 import '../network/api_response.dart';
 import 'api_service.dart';
 import 'auth_storage_service.dart';
+import 'fcm_notification_service.dart';
 
 class AuthService {
   AuthService._();
@@ -156,12 +157,14 @@ class AuthService {
     bool createIfNotExists = true,
     String role = 'User',
   }) async {
+    final fcmToken = await FcmNotificationService.instance.getToken();
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.verifyMsg91Token,
       body: {
         'accessToken': accessToken,
         'deviceName': 'OneDestiny Customer App',
         'deviceOs': _deviceOs,
+        'fcmToken': fcmToken,
         'createIfNotExists': createIfNotExists,
         'userRole': role,
         'role': role,
@@ -222,12 +225,14 @@ class AuthService {
     String userRole = 'User',
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
+    final fcmToken = await FcmNotificationService.instance.getToken();
 
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.phoneVerifyOtp,
       body: {
         'phone': formattedPhone,
         'otp': otp,
+        'fcmToken': fcmToken,
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
@@ -252,6 +257,7 @@ class AuthService {
     String userRole = 'User',
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
+    final fcmToken = await FcmNotificationService.instance.getToken();
 
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.phoneFirebaseLogin,
@@ -259,6 +265,7 @@ class AuthService {
         'phone': formattedPhone,
         'verificationId': verificationId,
         'otp': otp,
+        'fcmToken': fcmToken,
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
@@ -281,11 +288,13 @@ class AuthService {
     required String password,
     String userRole = 'User',
   }) async {
+    final fcmToken = await FcmNotificationService.instance.getToken();
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.login,
       body: {
         'email': email.trim().toLowerCase(),
         'password': password,
+        'fcmToken': fcmToken,
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
@@ -381,7 +390,30 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    try {
+      await ApiService.instance.post(
+        url: ApiConfig.logout,
+        requiresAuth: true,
+      );
+    } catch (_) {}
+    try {
+      await FcmNotificationService.instance.deleteToken();
+    } catch (_) {}
     await AuthStorageService.instance.clearAuth();
+  }
+
+  Future<bool> updateFcmToken(String fcmToken) async {
+    try {
+      final res = await ApiService.instance.post(
+        url: ApiConfig.fcmToken,
+        body: {'fcmToken': fcmToken},
+        requiresAuth: true,
+      );
+      return res.success;
+    } catch (e) {
+      debugPrint('Failed to update FCM token: $e');
+      return false;
+    }
   }
 
   Future<void> _saveAuthResponse(Map<String, dynamic> data) async {
@@ -405,6 +437,16 @@ class AuthService {
         role: role,
         avatarUrl: avatarUrl,
       );
+
+      // Acquire and register FCM token right after successful login
+      try {
+        final fcmToken = await FcmNotificationService.instance.getToken();
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await updateFcmToken(fcmToken);
+        }
+      } catch (e) {
+        debugPrint('[AuthService] Error registering FCM token on login: $e');
+      }
     }
   }
 }

@@ -25,6 +25,21 @@ class ApiConfig {
   static String get verifyEmail => '$_baseUrl/api/auth/verify-email';
   static String get changePassword => '$_baseUrl/api/auth/change-password';
   static String get sessions => '$_baseUrl/api/auth/sessions';
+  static String get logout => '$_baseUrl/api/auth/logout';
+  static String get fcmToken => '$_baseUrl/api/auth/fcm-token';
+  static String revokeSession(int id) => '$_baseUrl/api/auth/sessions/$id';
+  static String get revokeAllSessions => '$_baseUrl/api/auth/sessions/revoke-all';
+
+  // Lead Requests (Broadcast Requirement)
+  static String get clientLeadRequests => '$_baseUrl/api/client/lead-requests';
+  static String clientLeadRequestById(int id) => '$_baseUrl/api/client/lead-requests/$id';
+  static String clientLeadRequestClose(int id) => '$_baseUrl/api/client/lead-requests/$id/close';
+
+  // Quotations
+  static String get clientQuotations => '$_baseUrl/api/client/quotations';
+  static String clientQuotationById(int id) => '$_baseUrl/api/client/quotations/$id';
+  static String clientQuotationAccept(int id) => '$_baseUrl/api/client/quotations/$id/accept';
+  static String clientQuotationDecline(int id) => '$_baseUrl/api/client/quotations/$id/decline';
 
   // Categories
   static String get categories => '$_baseUrl/api/categories';
