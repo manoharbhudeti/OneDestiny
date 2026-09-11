@@ -14,6 +14,10 @@ class ApiConfig {
     _baseUrl = trimmed;
   }
 
+  // Legal
+  static String get privacyPolicyUrl => '$_baseUrl/privacy-policy';
+  static String get termsUrl => '$_baseUrl/terms';
+
   // Auth endpoints
   static String get phoneSendOtp => '$_baseUrl/api/auth/phone/send-otp';
   static String get phoneVerifyOtp => '$_baseUrl/api/auth/phone/verify-otp';

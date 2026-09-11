@@ -6,7 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 
 class HelpPoliciesScreen extends StatefulWidget {
-  const HelpPoliciesScreen({super.key});
+  final int initialTabIndex;
+  const HelpPoliciesScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<HelpPoliciesScreen> createState() => _HelpPoliciesScreenState();
@@ -63,7 +64,11 @@ class _HelpPoliciesScreenState extends State<HelpPoliciesScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 3),
+    );
   }
 
   @override

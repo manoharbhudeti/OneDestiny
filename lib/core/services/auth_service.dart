@@ -1,10 +1,10 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 import '../config/api_config.dart';
 import '../network/api_response.dart';
 import 'api_service.dart';
 import 'auth_storage_service.dart';
+import 'device_info_service.dart';
 import 'fcm_notification_service.dart';
 
 class AuthService {
@@ -19,18 +19,6 @@ class AuthService {
       widgetId ?? msg91WidgetId,
       authToken ?? msg91AuthToken,
     );
-  }
-
-  String get _deviceOs {
-    if (kIsWeb) return 'Web';
-    try {
-      if (Platform.isAndroid) return 'Android';
-      if (Platform.isIOS) return 'iOS';
-      if (Platform.isLinux) return 'Linux';
-      if (Platform.isMacOS) return 'macOS';
-      if (Platform.isWindows) return 'Windows';
-    } catch (_) {}
-    return 'Mobile';
   }
 
   /// Send OTP using MSG91 OTP Widget SDK
@@ -158,12 +146,14 @@ class AuthService {
     String role = 'User',
   }) async {
     final fcmToken = await FcmNotificationService.instance.getToken();
+    final device = await DeviceInfoService.instance.getDeviceDetails();
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.verifyMsg91Token,
       body: {
         'accessToken': accessToken,
-        'deviceName': 'OneDestiny Customer App',
-        'deviceOs': _deviceOs,
+        'deviceName': device.deviceName,
+        'deviceOs': device.deviceOs,
+        if (device.ipAddress != null) 'ipAddress': device.ipAddress,
         'fcmToken': fcmToken,
         'createIfNotExists': createIfNotExists,
         'userRole': role,
@@ -226,6 +216,7 @@ class AuthService {
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
     final fcmToken = await FcmNotificationService.instance.getToken();
+    final device = await DeviceInfoService.instance.getDeviceDetails();
 
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.phoneVerifyOtp,
@@ -236,8 +227,9 @@ class AuthService {
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
-        'deviceName': 'OneDestiny Customer App',
-        'deviceOs': _deviceOs,
+        'deviceName': device.deviceName,
+        'deviceOs': device.deviceOs,
+        if (device.ipAddress != null) 'ipAddress': device.ipAddress,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -258,6 +250,7 @@ class AuthService {
   }) async {
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';
     final fcmToken = await FcmNotificationService.instance.getToken();
+    final device = await DeviceInfoService.instance.getDeviceDetails();
 
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.phoneFirebaseLogin,
@@ -269,8 +262,9 @@ class AuthService {
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
-        'deviceName': 'OneDestiny Customer App',
-        'deviceOs': _deviceOs,
+        'deviceName': device.deviceName,
+        'deviceOs': device.deviceOs,
+        if (device.ipAddress != null) 'ipAddress': device.ipAddress,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -289,6 +283,7 @@ class AuthService {
     String userRole = 'User',
   }) async {
     final fcmToken = await FcmNotificationService.instance.getToken();
+    final device = await DeviceInfoService.instance.getDeviceDetails();
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.login,
       body: {
@@ -298,8 +293,9 @@ class AuthService {
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
-        'deviceName': 'OneDestiny Customer App',
-        'deviceOs': _deviceOs,
+        'deviceName': device.deviceName,
+        'deviceOs': device.deviceOs,
+        if (device.ipAddress != null) 'ipAddress': device.ipAddress,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -352,6 +348,7 @@ class AuthService {
     required String otp,
     String userRole = 'User',
   }) async {
+    final device = await DeviceInfoService.instance.getDeviceDetails();
     final res = await ApiService.instance.post<Map<String, dynamic>>(
       url: ApiConfig.verifyEmail,
       body: {
@@ -360,8 +357,9 @@ class AuthService {
         'userRole': userRole,
         'role': userRole,
         'UserRole': userRole,
-        'deviceName': 'OneDestiny Customer App',
-        'deviceOs': _deviceOs,
+        'deviceName': device.deviceName,
+        'deviceOs': device.deviceOs,
+        if (device.ipAddress != null) 'ipAddress': device.ipAddress,
       },
       fromJsonT: (json) => json is Map<String, dynamic> ? json : <String, dynamic>{},
       requiresAuth: false,
@@ -414,6 +412,38 @@ class AuthService {
       debugPrint('Failed to update FCM token: $e');
       return false;
     }
+  }
+
+  /// Get list of active sessions for current user
+  Future<ApiResponse<List<Map<String, dynamic>>>> getSessions() async {
+    return await ApiService.instance.get<List<Map<String, dynamic>>>(
+      url: ApiConfig.sessions,
+      fromJsonT: (json) {
+        if (json is List) {
+          return json.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+        return <Map<String, dynamic>>[];
+      },
+      requiresAuth: true,
+    );
+  }
+
+  /// Revoke a specific session
+  Future<ApiResponse<String>> revokeSession(int sessionId) async {
+    return await ApiService.instance.delete<String>(
+      url: ApiConfig.revokeSession(sessionId),
+      fromJsonT: (json) => json is String ? json : 'Session revoked successfully.',
+      requiresAuth: true,
+    );
+  }
+
+  /// Revoke all other sessions except current
+  Future<ApiResponse<String>> revokeAllSessions() async {
+    return await ApiService.instance.post<String>(
+      url: ApiConfig.revokeAllSessions,
+      fromJsonT: (json) => json is String ? json : 'All other sessions revoked.',
+      requiresAuth: true,
+    );
   }
 
   Future<void> _saveAuthResponse(Map<String, dynamic> data) async {

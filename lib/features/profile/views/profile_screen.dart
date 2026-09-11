@@ -13,6 +13,7 @@ import '../../../core/widgets/location_picker_sheet.dart';
 import '../../auth/views/login_screen.dart';
 import '../../help_policies/views/help_policies_screen.dart';
 import 'about_onedestiny_screen.dart';
+import 'sessions_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -286,6 +287,20 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                         onChanged: (value) {
                           widget.themeModeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
                         },
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: borderColor),
+                  ListTile(
+                    leading: Icon(Icons.devices_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    title: Text('Active Sessions & Devices', style: AppTypography.subtitle(context).copyWith(fontSize: 14)),
+                    subtitle: Text('Device OS, model & IP address management', style: AppTypography.description(context, isSecondary: true)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SessionsScreen(),
+                        ),
                       );
                     },
                   ),

@@ -50,4 +50,18 @@ class AppTypography {
       letterSpacing: 0.2,
     );
   }
+
+  /// Small caption (Regular, ~11-12sp)
+  static TextStyle caption(BuildContext context, {bool isSecondary = true, Color? customColor}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return GoogleFonts.inter(
+      fontSize: 11,
+      fontWeight: FontWeight.w400,
+      color: customColor ?? (isSecondary ? secondaryColor : primaryColor),
+      height: 1.3,
+    );
+  }
 }

@@ -1,8 +1,12 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/api_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../help_policies/views/help_policies_screen.dart';
 import 'otp_verification_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -23,17 +27,62 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
 
-  bool _agreed = false;
+  late final TapGestureRecognizer _privacyRecognizer;
+  late final TapGestureRecognizer _termsRecognizer;
+
   bool _loading = false;
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
+    _termsRecognizer = TapGestureRecognizer()..onTap = _openTerms;
+  }
+
+  @override
   void dispose() {
+    _privacyRecognizer.dispose();
+    _termsRecognizer.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(ApiConfig.privacyPolicyUrl);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HelpPoliciesScreen(initialTabIndex: 3),
+      ),
+    );
+  }
+
+  Future<void> _openTerms() async {
+    final uri = Uri.parse(ApiConfig.termsUrl);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HelpPoliciesScreen(initialTabIndex: 3),
+      ),
+    );
   }
 
   Future<void> _signup() async {
@@ -54,11 +103,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (pass.length < 8) {
       _showSnack('Password must be at least 8 characters');
-      return;
-    }
-
-    if (!_agreed) {
-      _showSnack('Please agree to Privacy Policy and Terms');
       return;
     }
 
@@ -225,35 +269,41 @@ class _SignupScreenState extends State<SignupScreen> {
 
               const SizedBox(height: 16),
 
-              // Terms & Privacy Agreement
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _agreed,
-                      onChanged: (v) => setState(() => _agreed = v ?? false),
-                      activeColor: AppColors.primaryBurgundy,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              // Terms & Privacy Redirects
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'By continuing, you agree to our ',
+                      style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
+                      children: [
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: const TextStyle(
+                            color: AppColors.accentGold,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.accentGold,
+                          ),
+                          recognizer: _privacyRecognizer,
+                        ),
+                        const TextSpan(text: ' and '),
+                        TextSpan(
+                          text: 'Terms of Service',
+                          style: const TextStyle(
+                            color: AppColors.accentGold,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.accentGold,
+                          ),
+                          recognizer: _termsRecognizer,
+                        ),
+                      ],
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'By continuing, you agree to our ',
-                        style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
-                        children: const [
-                          TextSpan(text: 'Privacy Policy', style: TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold)),
-                          TextSpan(text: ' and '),
-                          TextSpan(text: 'Terms', style: TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
 
               const SizedBox(height: 28),
