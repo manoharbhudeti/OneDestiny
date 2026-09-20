@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:682186122285:android:eebacd3b3c3ce241de84a4",
+        "mobilesdk_app_id": "1:682186122285:android:81dfac44e56cb8ebde84a4",
         "android_client_info": {
-          "package_name": "com.Onedestiny.vendor"
+          "package_name": "com.OneDestiny.customer"
         }
       },
       "oauth_client": [],
@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:682186122285:android:16163dee4049cf4ede84a4",
+        "mobilesdk_app_id": "1:682186122285:android:eebacd3b3c3ce241de84a4",
         "android_client_info": {
-          "package_name": "com.onedestiny.customer"
+          "package_name": "com.Onedestiny.vendor"
         }
       },
       "oauth_client": [],

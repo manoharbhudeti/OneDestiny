@@ -3,6 +3,7 @@ import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 import '../config/api_config.dart';
 import '../network/api_response.dart';
 import 'api_service.dart';
+import 'analytics_service.dart';
 import 'auth_storage_service.dart';
 import 'device_info_service.dart';
 import 'fcm_notification_service.dart';
@@ -397,6 +398,9 @@ class AuthService {
     try {
       await FcmNotificationService.instance.deleteToken();
     } catch (_) {}
+    try {
+      await AnalyticsService.instance.setUserId(null);
+    } catch (_) {}
     await AuthStorageService.instance.clearAuth();
   }
 
@@ -476,6 +480,15 @@ class AuthService {
         }
       } catch (e) {
         debugPrint('[AuthService] Error registering FCM token on login: $e');
+      }
+
+      // Record login event in Google Analytics for Google Ads conversion tracking
+      try {
+        await AnalyticsService.instance.setUserId(userId.toString());
+        await AnalyticsService.instance.setUserProperty(name: 'user_role', value: role);
+        await AnalyticsService.instance.logLogin(loginMethod: 'otp_auth');
+      } catch (e) {
+        debugPrint('[AuthService] Error logging analytics login: $e');
       }
     }
   }

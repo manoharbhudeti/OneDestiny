@@ -14,6 +14,7 @@ import '../models/vendor_detail_models.dart';
 import '../models/vendor_model.dart';
 import '../network/api_response.dart';
 import '../services/api_service.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_storage_service.dart';
 
 abstract class AppRepository {
@@ -312,7 +313,7 @@ class ApiAppRepository implements AppRepository {
     int? guestCount,
     double? budget,
   }) async {
-    return await ApiService.instance.post<BookingModel>(
+    final response = await ApiService.instance.post<BookingModel>(
       url: ApiConfig.clientVendorBook(vendorId),
       body: {
         'eventType': 'Wedding',
@@ -352,6 +353,18 @@ class ApiAppRepository implements AppRepository {
       },
       requiresAuth: true,
     );
+
+    if (response.success && response.data != null) {
+      try {
+        await AnalyticsService.instance.logBookingCompleted(
+          bookingId: response.data!.id,
+          serviceName: response.data!.title,
+          amount: budget,
+        );
+      } catch (_) {}
+    }
+
+    return response;
   }
 
   @override
