@@ -28,6 +28,10 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>OneDestiny uses your location to show nearby event vendors and update your event city.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>OneDestiny uses your location to show nearby event vendors and update your event city even when the app is in the background.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>OneDestiny uses your location to show nearby event vendors and update your event city even when the app is in the background.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>OneDestiny needs access to your camera to capture photos for profile and inquiries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
