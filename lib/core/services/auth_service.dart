@@ -388,6 +388,24 @@ class AuthService {
     );
   }
 
+  /// Delete user account permanently (Apple App Store Guideline 5.1.1(v) compliance)
+  Future<ApiResponse<String>> deleteAccount() async {
+    try {
+      final res = await ApiService.instance.delete<String>(
+        url: ApiConfig.accountDelete,
+        fromJsonT: (json) => json is String ? json : 'Account deleted successfully.',
+        requiresAuth: true,
+      );
+      if (res.success) {
+        await logout();
+      }
+      return res;
+    } catch (e) {
+      debugPrint('[AuthService] Delete account error: $e');
+      return ApiResponse<String>.fail('Failed to delete account: $e');
+    }
+  }
+
   Future<void> logout() async {
     try {
       await ApiService.instance.post(

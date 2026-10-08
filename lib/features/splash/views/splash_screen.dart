@@ -26,10 +26,10 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // 5.5-Second Cinematic Splash Sequence
+    // Responsive Cinematic Splash Sequence (2.8 seconds)
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 5500),
+      duration: const Duration(milliseconds: 2800),
     );
 
     _controller.addStatusListener((status) {
@@ -94,9 +94,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       backgroundColor: AppColors.darkBurgundy,
-      body: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _navigateToHome,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
           final progress = _controller.value;
 
           // 1. Clean Logo Zoom-in Animation (0.00 -> 0.40)
@@ -254,7 +257,8 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
       ),
-    );
+    ),
+  );
   }
 }
 

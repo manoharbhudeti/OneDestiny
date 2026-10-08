@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../bookings/views/bookings_screen.dart';
 import '../../chat/views/chat_screen.dart';
@@ -75,6 +76,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final appState = AppStateScope.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Footer background: pitch dark surface in dark mode, burgundy in light mode
@@ -158,7 +160,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
                         _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home', activeColor, unselectedColor),
                         _buildNavItem(1, Icons.explore_rounded, Icons.explore_outlined, 'Explore', activeColor, unselectedColor),
                         _buildNavItem(2, Icons.bookmark_rounded, Icons.bookmark_outline_rounded, 'Bookings', activeColor, unselectedColor),
-                        _buildNavItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, 'Chat', activeColor, unselectedColor, badgeCount: 2),
+                        _buildNavItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, 'Chat', activeColor, unselectedColor, badgeCount: appState.unreadChatCount),
                         _buildNavItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Profile', activeColor, unselectedColor),
                       ],
                     ),

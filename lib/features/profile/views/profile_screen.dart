@@ -353,6 +353,27 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 onTap: () => _showLogoutDialog(context),
               ),
             ),
+            const SizedBox(height: 14),
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF261014) : const Color(0xFFFFF0F2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.delete_forever_rounded, color: AppColors.error),
+                title: const Text(
+                  'Delete Account',
+                  style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                subtitle: const Text(
+                  'Permanently remove account and all personal data',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.error),
+                onTap: () => _showDeleteAccountDialog(context),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
         ),
@@ -763,6 +784,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
               onPressed: () async {
                 await AuthService.instance.logout();
                 if (!context.mounted) return;
+                AppStateScope.read(context).resetAuth();
                 Navigator.pop(context);
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -787,6 +809,93 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
               child: const Text('Log Out'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: AppColors.error),
+                  SizedBox(width: 10),
+                  Text('Delete Account'),
+                ],
+              ),
+              content: const Text(
+                'Are you sure you want to permanently delete your OneDestiny account?\n\n'
+                'This action is irreversible. All your profile information, booking requests, and chat conversations will be permanently deleted.',
+                style: TextStyle(fontSize: 14, height: 1.4),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() => isDeleting = true);
+                          final res = await AuthService.instance.deleteAccount();
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+
+                          if (res.success) {
+                            AppStateScope.read(context).resetAuth();
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => LoginScreen(themeModeNotifier: widget.themeModeNotifier),
+                              ),
+                              (route) => false,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.darkPrimaryBurgundy,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                content: const Text('Your account has been deleted successfully.'),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                content: Text(
+                                  res.errors.isNotEmpty
+                                      ? res.errors.first
+                                      : (res.message.isNotEmpty ? res.message : 'Failed to delete account. Please try again.'),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
         );
       },
     );

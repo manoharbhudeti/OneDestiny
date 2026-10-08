@@ -26,15 +26,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -58,5 +52,14 @@ class DefaultFirebaseOptions {
     messagingSenderId: '682186122285',
     projectId: 'onedestiny-d52c5',
     storageBucket: 'onedestiny-d52c5.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyBA0EzRJ_ZrPk_53LgSGKSNmMB6WBH2Tr4',
+    appId: '1:682186122285:ios:16163dee4049cf4ede84a4',
+    messagingSenderId: '682186122285',
+    projectId: 'onedestiny-d52c5',
+    storageBucket: 'onedestiny-d52c5.firebasestorage.app',
+    iosBundleId: 'com.OneDestiny.customer',
   );
 }

@@ -97,6 +97,7 @@ class AppState extends ChangeNotifier {
 
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
   int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
+  int get unreadChatCount => _conversations.fold<int>(0, (sum, item) => sum + item.unreadCount);
 
   List<FaqItem> get faqs => List.unmodifiable(_faqs);
   List<CancellationTier> get cancellationTiers => List.unmodifiable(_cancellationTiers);
@@ -407,6 +408,20 @@ class AppState extends ChangeNotifier {
     _profile = _profile.copyWith(notificationsEnabled: enabled);
     notifyListeners();
     await AuthStorageService.instance.updateProfile(notificationsEnabled: enabled);
+  }
+
+  void resetAuth() {
+    _profile = const UserProfileModel(
+      name: '',
+      mobile: '',
+      email: '',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      notificationsEnabled: true,
+    );
+    _bookings = [];
+    _conversations = [];
+    _messagesByConversation.clear();
+    notifyListeners();
   }
 
   Future<void> updateLocation(LocationResult result) async {
