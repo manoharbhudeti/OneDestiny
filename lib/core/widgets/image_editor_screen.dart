@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../theme/app_colors.dart';
@@ -117,9 +118,17 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
       } catch (_) {
         return _buildFallbackIcon();
       }
+    } else if (kIsWeb) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        width: cropBoxSize,
+        height: cropBoxSize,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(),
+      );
     } else {
       return Image.file(
-        File(imagePath),
+        io.File(imagePath),
         fit: BoxFit.cover,
         width: cropBoxSize,
         height: cropBoxSize,

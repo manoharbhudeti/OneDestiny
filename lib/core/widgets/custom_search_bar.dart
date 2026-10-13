@@ -6,12 +6,14 @@ class CustomSearchBar extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onFilterTap;
+  final bool isFilterActive;
 
   const CustomSearchBar({
     super.key,
     this.controller,
     this.onChanged,
     this.onFilterTap,
+    this.isFilterActive = false,
   });
 
   @override
@@ -101,18 +103,39 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
             child: InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: widget.onFilterTap,
-              child: Container(
-                width: 36,
-                height: 36,
+              child: Stack(
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.tune_rounded,
-                  color: primaryColor,
-                  size: 18,
-                ),
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: widget.isFilterActive
+                          ? AppColors.accentGold.withValues(alpha: 0.18)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.tune_rounded,
+                      color: widget.isFilterActive ? AppColors.accentGold : primaryColor,
+                      size: 18,
+                    ),
+                  ),
+                  if (widget.isFilterActive)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppColors.accentGold,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

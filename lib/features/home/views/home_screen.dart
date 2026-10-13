@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/data/mock_data.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -8,6 +9,7 @@ import '../../../core/widgets/custom_search_bar.dart';
 import '../../../core/widgets/luxury_header.dart';
 import '../../../core/widgets/popular_service_card.dart';
 import '../../../core/widgets/trending_vendor_card.dart';
+import '../../../core/widgets/vendor_filter_bottom_sheet.dart';
 import '../../vendor_detail/views/vendor_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +37,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final displayVendors = appState.filteredTrendingVendors;
+    final flashCards = appState.flashCards.isNotEmpty
+        ? appState.flashCards
+        : MockData.flashCards;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -76,28 +81,28 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: CustomSearchBar(
                   onChanged: appState.updateHomeSearch,
-                  onFilterTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Filter options coming soon!', style: AppTypography.description(context)),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
-                  },
+                  isFilterActive: appState.isHomeFilterActive,
+                  onFilterTap: () => _openFilterSheet(context, appState),
                 ),
               ),
 
-              if (appState.flashCards.isNotEmpty) ...[
+              if (flashCards.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 AddCardsCarousel(
-                  cards: appState.flashCards,
+                  cards: flashCards,
                   autoScrollInterval: const Duration(milliseconds: 1800),
                   onCardTap: (card) {
                     if (card.targetCategoryId != null) {
                       appState.selectHomeCategory(card.targetCategoryId!);
                     }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Selected Offer: ${card.title}', style: AppTypography.description(context)),
+                        duration: const Duration(seconds: 1),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -268,6 +273,40 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
               const SizedBox(height: 10),
 
+              if (appState.homeSelectedDate != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentGold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.35)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.event_available_rounded, size: 14, color: AppColors.accentGold),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Available on ${appState.homeSelectedDate!.day}/${appState.homeSelectedDate!.month}/${appState.homeSelectedDate!.year} • ${displayVendors.length} vendors',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accentGold),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => appState.setHomeDateFilter(null),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Text('Clear', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accentGold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+
               if (appState.isLoadingInitial || appState.isLoadingVendors)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 36),
@@ -288,16 +327,33 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'No vendors found',
+                          appState.homeSelectedDate != null
+                              ? 'No vendors available on this date'
+                              : 'No vendors found',
                           textAlign: TextAlign.center,
                           style: AppTypography.subtitle(context).copyWith(fontSize: 15),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Change your search or category filter to discover more verified vendors.',
+                          appState.homeSelectedDate != null
+                              ? 'Try picking another day or clear the date filter to see all vendors.'
+                              : 'Change your search or category filter to discover more verified vendors.',
                           textAlign: TextAlign.center,
                           style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
                         ),
+                        if (appState.isHomeFilterActive) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () => appState.resetHomeFilters(),
+                            icon: const Icon(Icons.refresh_rounded, size: 14),
+                            label: const Text('Reset All Filters'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.accentGold,
+                              side: const BorderSide(color: AppColors.accentGold),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -342,5 +398,34 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       ),
     ),
   );
+  }
+
+  void _openFilterSheet(BuildContext context, dynamic appState) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return VendorFilterBottomSheet(
+          currentMinPrice: appState.homeMinPrice,
+          currentMaxPrice: appState.homeMaxPrice,
+          currentMinRating: appState.homeMinRating,
+          currentSortBy: appState.homeSortBy,
+          currentSelectedDate: appState.homeSelectedDate,
+          onApply: ({required minPrice, required maxPrice, required minRating, required sortBy, selectedDate}) {
+            appState.applyHomeFilters(
+              minPrice: minPrice,
+              maxPrice: maxPrice,
+              minRating: minRating,
+              sortBy: sortBy,
+              selectedDate: selectedDate,
+            );
+          },
+          onReset: () {
+            appState.resetHomeFilters();
+          },
+        );
+      },
+    );
   }
 }

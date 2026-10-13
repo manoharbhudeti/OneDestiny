@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/location_service.dart';
 import '../state/app_state_scope.dart';
@@ -544,9 +545,18 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
           child: Icon(Icons.person_outline, color: Colors.white, size: 18),
         );
       }
+    } else if (kIsWeb) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person_outline, color: Colors.white, size: 18),
+        ),
+      );
     } else {
       return Image.file(
-        File(url),
+        io.File(url),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const CircleAvatar(
           backgroundColor: Colors.white24,

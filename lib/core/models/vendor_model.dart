@@ -9,6 +9,8 @@ class VendorModel {
   final String imageUrl;
   final bool isTrending;
   final bool isFavorite;
+  final List<String> availableDays;
+  final List<String> blockedDates;
 
   const VendorModel({
     required this.id,
@@ -21,6 +23,8 @@ class VendorModel {
     required this.imageUrl,
     this.isTrending = false,
     this.isFavorite = false,
+    this.availableDays = const [],
+    this.blockedDates = const [],
   });
 
   factory VendorModel.fromJson(Map<String, dynamic> json, {bool isFavorite = false}) {
@@ -30,6 +34,16 @@ class VendorModel {
         json['logoUrl']?.toString() ??
         json['imageUrl']?.toString() ??
         '';
+
+    final blocked = (json['blockedDates'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const <String>[];
+
+    final days = (json['availableDays'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const <String>[];
 
     return VendorModel(
       id: json['id']?.toString() ?? '',
@@ -46,7 +60,26 @@ class VendorModel {
           : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
       isTrending: json['isFeatured'] as bool? ?? json['isTrending'] as bool? ?? false,
       isFavorite: isFavorite,
+      availableDays: days,
+      blockedDates: blocked,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      'rating': rating,
+      'distanceKm': distanceKm,
+      'startingPrice': startingPrice,
+      'location': location,
+      'imageUrl': imageUrl,
+      'isTrending': isTrending,
+      'isFavorite': isFavorite,
+      'availableDays': availableDays,
+      'blockedDates': blockedDates,
+    };
   }
 
   VendorModel copyWith({
@@ -60,6 +93,8 @@ class VendorModel {
     String? imageUrl,
     bool? isTrending,
     bool? isFavorite,
+    List<String>? availableDays,
+    List<String>? blockedDates,
   }) {
     return VendorModel(
       id: id ?? this.id,
@@ -72,8 +107,39 @@ class VendorModel {
       imageUrl: imageUrl ?? this.imageUrl,
       isTrending: isTrending ?? this.isTrending,
       isFavorite: isFavorite ?? this.isFavorite,
+      availableDays: availableDays ?? this.availableDays,
+      blockedDates: blockedDates ?? this.blockedDates,
     );
   }
+
+  /// Checks if the vendor is available on a specific date/day.
+  /// If [date] is null, returns true (meaning unfiltered, vendor should show).
+  bool isAvailableOnDate(DateTime? date) {
+    if (date == null) return true;
+
+    final dateKey = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    // If date is in blocked dates, vendor is unavailable
+    for (final blocked in blockedDates) {
+      if (blocked.startsWith(dateKey)) {
+        return false;
+      }
+    }
+
+    // If specific available days are configured, verify weekday
+    if (availableDays.isNotEmpty) {
+      const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      final targetDay = weekdays[date.weekday - 1].toLowerCase();
+      final isDayAllowed = availableDays.any((d) => d.toLowerCase() == targetDay);
+      if (!isDayAllowed) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool get isAvailableToday => isAvailableOnDate(DateTime.now());
 
   String get formattedPrice {
     final priceString = startingPrice.toInt().toString();

@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -441,9 +442,18 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
           child: Icon(Icons.person, color: Colors.white),
         );
       }
+    } else if (kIsWeb) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person, color: Colors.white),
+        ),
+      );
     } else {
       return Image.file(
-        File(url),
+        io.File(url),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const CircleAvatar(
           backgroundColor: Colors.white24,

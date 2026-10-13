@@ -26,13 +26,22 @@ class FcmNotificationService {
     try {
       // 1. Initialize Firebase if not already initialized
       try {
-        await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+        if (Firebase.apps.isEmpty) {
+          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+        }
       } catch (e) {
         debugPrint('[FCM] Firebase already initialized or error: $e');
       }
 
-      // 2. Set background messaging handler
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      if (Firebase.apps.isEmpty) {
+        debugPrint('[FCM UserApp] Firebase not initialized. Skipping FCM setup.');
+        return;
+      }
+
+      // 2. Set background messaging handler (native platforms only)
+      if (!kIsWeb) {
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      }
 
       // 3. Request permissions
       final messaging = FirebaseMessaging.instance;

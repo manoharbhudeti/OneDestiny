@@ -3,16 +3,24 @@ import '../theme/app_colors.dart';
 
 class BookingCalendarWidget extends StatefulWidget {
   final DateTime initialDate;
+  final DateTime? selectedDate;
   final Set<DateTime> blockedDates;
   final Set<DateTime> bookedDates;
   final Function(DateTime)? onDateSelected;
+  final bool disablePastDates;
+  final bool showLegend;
+  final EdgeInsets padding;
 
   const BookingCalendarWidget({
     super.key,
     required this.initialDate,
+    this.selectedDate,
     this.blockedDates = const {},
     this.bookedDates = const {},
     this.onDateSelected,
+    this.disablePastDates = true,
+    this.showLegend = true,
+    this.padding = const EdgeInsets.all(16),
   });
 
   @override
@@ -21,13 +29,27 @@ class BookingCalendarWidget extends StatefulWidget {
 
 class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
   late DateTime _currentMonth;
-  late DateTime _selectedDate;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    _currentMonth = DateTime(widget.initialDate.year, widget.initialDate.month, 1);
-    _selectedDate = widget.initialDate;
+    final init = widget.selectedDate ?? widget.initialDate;
+    _currentMonth = DateTime(init.year, init.month, 1);
+    _selectedDate = widget.selectedDate;
+  }
+
+  @override
+  void didUpdateWidget(covariant BookingCalendarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDate != widget.selectedDate) {
+      setState(() {
+        _selectedDate = widget.selectedDate;
+        if (widget.selectedDate != null) {
+          _currentMonth = DateTime(widget.selectedDate!.year, widget.selectedDate!.month, 1);
+        }
+      });
+    }
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -45,12 +67,14 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final cardBg = isDark ? AppColors.darkCardBg : AppColors.warmIvory;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final primaryTextColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
 
     final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
     final firstWeekday = DateTime(_currentMonth.year, _currentMonth.month, 1).weekday % 7; // 0 = Sun
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
 
     final monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -58,15 +82,15 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: widget.padding,
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -145,7 +169,8 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
               }
               final dayNumber = index - firstWeekday + 1;
               final date = DateTime(_currentMonth.year, _currentMonth.month, dayNumber);
-              final isSelected = _isSameDay(date, _selectedDate);
+              final isPast = date.isBefore(todayMidnight);
+              final isSelected = _selectedDate != null && _isSameDay(date, _selectedDate!);
               final isBlocked = _isBlocked(date);
               final isBooked = _isBooked(date);
 
@@ -155,7 +180,9 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
 
               if (isSelected) {
                 bgColor = AppColors.accentGold;
-                textColor = isDark ? Colors.black : Colors.white;
+                textColor = Colors.black;
+              } else if (isPast && widget.disablePastDates) {
+                textColor = isDark ? Colors.white24 : Colors.black26;
               } else if (isBooked) {
                 bgColor = AppColors.primaryBurgundy.withValues(alpha: 0.2);
                 textColor = AppColors.primaryBurgundy;
@@ -166,12 +193,14 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
               }
 
               return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                  widget.onDateSelected?.call(date);
-                },
+                onTap: (isPast && widget.disablePastDates)
+                    ? null
+                    : () {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                        widget.onDateSelected?.call(date);
+                      },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   margin: const EdgeInsets.all(2),
@@ -208,17 +237,19 @@ class _BookingCalendarWidgetState extends State<BookingCalendarWidget> {
               );
             },
           ),
-          const SizedBox(height: 14),
+          if (widget.showLegend) ...[
+            const SizedBox(height: 14),
 
-          // Legend Indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildLegendItem(AppColors.accentGold, 'Selected'),
-              _buildLegendItem(AppColors.primaryBurgundy, 'Vendor Booked'),
-              _buildLegendItem(Colors.redAccent, 'Blocked Date'),
-            ],
-          ),
+            // Legend Indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildLegendItem(AppColors.accentGold, 'Selected'),
+                _buildLegendItem(AppColors.primaryBurgundy, 'Vendor Booked'),
+                _buildLegendItem(Colors.redAccent, 'Blocked Date'),
+              ],
+            ),
+          ],
         ],
       ),
     );

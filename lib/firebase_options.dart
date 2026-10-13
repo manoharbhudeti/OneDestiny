@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -61,5 +58,14 @@ class DefaultFirebaseOptions {
     projectId: 'onedestiny-d52c5',
     storageBucket: 'onedestiny-d52c5.firebasestorage.app',
     iosBundleId: 'com.OneDestiny.customer',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBA0EzRJ_ZrPk_53LgSGKSNmMB6WBH2Tr4',
+    appId: '1:682186122285:web:16163dee4049cf4ede84a4',
+    messagingSenderId: '682186122285',
+    projectId: 'onedestiny-d52c5',
+    authDomain: 'onedestiny-d52c5.firebaseapp.com',
+    storageBucket: 'onedestiny-d52c5.firebasestorage.app',
   );
 }

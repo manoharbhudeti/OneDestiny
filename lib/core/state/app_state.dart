@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../data/mock_data.dart';
 import '../models/booking_model.dart';
 import '../models/category_model.dart';
 import '../models/chat_model.dart';
+import '../models/event_model.dart';
 import '../models/flash_card_model.dart';
 import '../models/help_policy_model.dart';
 import '../models/notification_model.dart';
@@ -16,7 +18,8 @@ import '../services/location_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState({AppRepository? repository}) : _repository = repository ?? ApiAppRepository() {
-    _flashCards = [];
+    _flashCards = List<FlashCardModel>.of(MockData.flashCards);
+    _events = List<EventModel>.of(MockData.events);
     _categories = [];
     _popularServices = [];
     _nearbyVendors = [];
@@ -43,6 +46,7 @@ class AppState extends ChangeNotifier {
   final AppRepository _repository;
 
   List<FlashCardModel> _flashCards = [];
+  List<EventModel> _events = [];
   List<CategoryModel> _categories = [];
   List<ServiceModel> _popularServices = [];
   List<VendorModel> _nearbyVendors = [];
@@ -75,13 +79,22 @@ class AppState extends ChangeNotifier {
   String _chatSearchQuery = '';
   String _activeLocation = 'Hyderabad, India';
 
+  // Home Filter Parameters
+  double _homeMinPrice = 0.0;
+  double _homeMaxPrice = 500000.0;
+  double _homeMinRating = 0.0;
+  String _homeSortBy = 'popular';
+  DateTime? _homeSelectedDate;
+
   // Explore Filter Parameters
   double _exploreMinPrice = 0.0;
   double _exploreMaxPrice = 500000.0;
   double _exploreMinRating = 0.0;
   String _exploreSortBy = 'popular';
+  DateTime? _exploreSelectedDate;
 
   List<FlashCardModel> get flashCards => List.unmodifiable(_flashCards);
+  List<EventModel> get events => List.unmodifiable(_events);
   List<CategoryModel> get categories => List.unmodifiable(_categories);
   List<ServiceModel> get popularServices => List.unmodifiable(_popularServices);
   List<VendorModel> get nearbyVendors => List.unmodifiable(_nearbyVendors);
@@ -131,10 +144,31 @@ class AppState extends ChangeNotifier {
   String get homeSelectedCategoryId => _homeSelectedCategoryId;
   String get exploreSelectedCategory => _exploreSelectedCategory;
 
+  // Home filter getters
+  DateTime? get homeSelectedDate => _homeSelectedDate;
+  double get homeMinPrice => _homeMinPrice;
+  double get homeMaxPrice => _homeMaxPrice;
+  double get homeMinRating => _homeMinRating;
+  String get homeSortBy => _homeSortBy;
+  bool get isHomeFilterActive =>
+      _homeMinPrice > 0 ||
+      _homeMaxPrice < 500000 ||
+      _homeMinRating > 0 ||
+      _homeSortBy != 'popular' ||
+      _homeSelectedDate != null;
+
+  // Explore filter getters
+  DateTime? get exploreSelectedDate => _exploreSelectedDate;
   double get exploreMinPrice => _exploreMinPrice;
   double get exploreMaxPrice => _exploreMaxPrice;
   double get exploreMinRating => _exploreMinRating;
   String get exploreSortBy => _exploreSortBy;
+  bool get isExploreFilterActive =>
+      _exploreMinPrice > 0 ||
+      _exploreMaxPrice < 500000 ||
+      _exploreMinRating > 0 ||
+      _exploreSortBy != 'popular' ||
+      _exploreSelectedDate != null;
 
   List<VendorModel> get allVendors {
     final map = <String, VendorModel>{};
@@ -144,6 +178,14 @@ class AppState extends ChangeNotifier {
     for (final v in _nearbyVendors) {
       map[v.id] = v;
     }
+    if (map.isEmpty) {
+      for (final v in MockData.trendingVendors) {
+        map[v.id] = v;
+      }
+      for (final v in MockData.nearbyVendors) {
+        map[v.id] = v;
+      }
+    }
     return map.values.toList();
   }
 
@@ -151,18 +193,37 @@ class AppState extends ChangeNotifier {
       allVendors.where((vendor) => vendor.isFavorite).toList(growable: false);
 
   List<VendorModel> get filteredTrendingVendors {
-    return _trendingVendors.where((vendor) {
-      return _matchesQuery(vendor, _homeSearchQuery) && _matchesCategoryId(vendor, _homeSelectedCategoryId);
-    }).toList(growable: false);
+    final source = _trendingVendors.isNotEmpty ? _trendingVendors : allVendors;
+    final list = source.where((vendor) {
+      final matchesQuery = _matchesQuery(vendor, _homeSearchQuery);
+      final matchesCat = _matchesCategoryId(vendor, _homeSelectedCategoryId);
+      final matchesPrice = vendor.startingPrice >= _homeMinPrice && vendor.startingPrice <= _homeMaxPrice;
+      final matchesRating = vendor.rating >= _homeMinRating;
+      final matchesDate = vendor.isAvailableOnDate(_homeSelectedDate);
+      return matchesQuery && matchesCat && matchesPrice && matchesRating && matchesDate;
+    }).toList();
+
+    if (_homeSortBy == 'price_low_high') {
+      list.sort((a, b) => a.startingPrice.compareTo(b.startingPrice));
+    } else if (_homeSortBy == 'price_high_low') {
+      list.sort((a, b) => b.startingPrice.compareTo(a.startingPrice));
+    } else if (_homeSortBy == 'rating_high') {
+      list.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+    return List.unmodifiable(list);
   }
 
   List<VendorModel> get filteredExploreVendors {
-    final list = allVendors.where((vendor) {
+    final source = allVendors.isNotEmpty
+        ? allVendors
+        : [...MockData.trendingVendors, ...MockData.nearbyVendors];
+    final list = source.where((vendor) {
       final matchesQuery = _matchesQuery(vendor, _exploreSearchQuery);
       final matchesCat = _matchesCategoryName(vendor, _exploreSelectedCategory);
       final matchesPrice = vendor.startingPrice >= _exploreMinPrice && vendor.startingPrice <= _exploreMaxPrice;
       final matchesRating = vendor.rating >= _exploreMinRating;
-      return matchesQuery && matchesCat && matchesPrice && matchesRating;
+      final matchesDate = vendor.isAvailableOnDate(_exploreSelectedDate);
+      return matchesQuery && matchesCat && matchesPrice && matchesRating && matchesDate;
     }).toList();
 
     if (_exploreSortBy == 'price_low_high') {
@@ -194,9 +255,10 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
 
-      // 2. Fetch categories, flash cards, popular services
+      // 2. Fetch categories, flash cards, popular services, events
       final catsFuture = _repository.getCategories();
       final flashCardsFuture = _repository.getFlashCards();
+      final eventsFuture = _repository.getEvents();
       final popularServicesFuture = _repository.getPopularServices();
       final profileFuture = _repository.getUserProfile();
       final bookingsFuture = _repository.getBookings();
@@ -207,6 +269,7 @@ class AppState extends ChangeNotifier {
       final results = await Future.wait([
         catsFuture,
         flashCardsFuture,
+        eventsFuture,
         popularServicesFuture,
         profileFuture,
         bookingsFuture,
@@ -216,16 +279,19 @@ class AppState extends ChangeNotifier {
       ]);
 
       _categories = results[0] as List<CategoryModel>;
-      _flashCards = results[1] as List<FlashCardModel>;
-      _popularServices = results[2] as List<ServiceModel>;
-      _profile = results[3] as UserProfileModel;
+      final flashList = results[1] as List<FlashCardModel>;
+      _flashCards = flashList.isNotEmpty ? flashList : List<FlashCardModel>.of(MockData.flashCards);
+      final eventsList = results[2] as List<EventModel>;
+      _events = eventsList.isNotEmpty ? eventsList : List<EventModel>.of(MockData.events);
+      _popularServices = results[3] as List<ServiceModel>;
+      _profile = results[4] as UserProfileModel;
       if (_profile.location.isNotEmpty && (savedLoc == null || savedLoc.isEmpty)) {
         _activeLocation = _profile.location;
       }
-      _bookings = results[4] as List<BookingModel>;
-      _conversations = results[5] as List<ChatConversationModel>;
-      _trendingVendors = results[6] as List<VendorModel>;
-      _nearbyVendors = results[7] as List<VendorModel>;
+      _bookings = results[5] as List<BookingModel>;
+      _conversations = results[6] as List<ChatConversationModel>;
+      _trendingVendors = results[7] as List<VendorModel>;
+      _nearbyVendors = results[8] as List<VendorModel>;
 
       // Check favorites
       final favorites = await AuthStorageService.instance.getFavoriteVendorIds();
@@ -296,16 +362,52 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void setHomeDateFilter(DateTime? date) {
+    _homeSelectedDate = date;
+    notifyListeners();
+  }
+
+  void applyHomeFilters({
+    required double minPrice,
+    required double maxPrice,
+    required double minRating,
+    required String sortBy,
+    DateTime? selectedDate,
+  }) {
+    _homeMinPrice = minPrice;
+    _homeMaxPrice = maxPrice;
+    _homeMinRating = minRating;
+    _homeSortBy = sortBy;
+    _homeSelectedDate = selectedDate;
+    notifyListeners();
+  }
+
+  void resetHomeFilters() {
+    _homeMinPrice = 0.0;
+    _homeMaxPrice = 500000.0;
+    _homeMinRating = 0.0;
+    _homeSortBy = 'popular';
+    _homeSelectedDate = null;
+    notifyListeners();
+  }
+
+  void setExploreDateFilter(DateTime? date) {
+    _exploreSelectedDate = date;
+    notifyListeners();
+  }
+
   void applyExploreFilters({
     required double minPrice,
     required double maxPrice,
     required double minRating,
     required String sortBy,
+    DateTime? selectedDate,
   }) {
     _exploreMinPrice = minPrice;
     _exploreMaxPrice = maxPrice;
     _exploreMinRating = minRating;
     _exploreSortBy = sortBy;
+    _exploreSelectedDate = selectedDate;
     notifyListeners();
   }
 
@@ -314,6 +416,7 @@ class AppState extends ChangeNotifier {
     _exploreMaxPrice = 500000.0;
     _exploreMinRating = 0.0;
     _exploreSortBy = 'popular';
+    _exploreSelectedDate = null;
     notifyListeners();
   }
 
@@ -349,6 +452,52 @@ class AppState extends ChangeNotifier {
       if (vendor.id == vendorId) return vendor;
     }
     return null;
+  }
+
+  /// Returns candidates/vendors tailored for a specific event (e.g. Marriage)
+  /// and optionally filtered by a specific arrangement category (e.g. Photography).
+  List<VendorModel> getVendorsForEvent(EventModel event, {String? categoryName}) {
+    final all = allVendors.isNotEmpty
+        ? allVendors
+        : [...MockData.trendingVendors, ...MockData.nearbyVendors];
+
+    if (categoryName != null &&
+        categoryName.isNotEmpty &&
+        categoryName.toLowerCase() != 'all') {
+      final filtered = all.where((v) {
+        final vCat = v.category.toLowerCase();
+        final filterCat = categoryName.toLowerCase();
+        return vCat.contains(filterCat) || filterCat.contains(vCat);
+      }).toList();
+
+      if (filtered.isNotEmpty) return filtered;
+    }
+
+    // Curated prioritization: vendors specified in event.vendorIds first
+    final List<VendorModel> curated = [];
+    final Set<String> addedIds = {};
+
+    for (final id in event.vendorIds) {
+      final match = vendorById(id);
+      if (match != null && addedIds.add(match.id)) {
+        curated.add(match);
+      }
+    }
+
+    // Match all vendors whose category aligns with event arrangements
+    final eventCategories =
+        event.arrangements.map((a) => a.categoryName.toLowerCase()).toSet();
+
+    for (final v in all) {
+      final vCat = v.category.toLowerCase();
+      if (!addedIds.contains(v.id) &&
+          eventCategories.any((cat) => vCat.contains(cat) || cat.contains(vCat))) {
+        addedIds.add(v.id);
+        curated.add(v);
+      }
+    }
+
+    return curated.isNotEmpty ? curated : all;
   }
 
   ChatConversationModel? conversationById(String conversationId) {

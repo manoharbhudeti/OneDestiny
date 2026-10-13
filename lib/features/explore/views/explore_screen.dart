@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/custom_search_bar.dart';
 import '../../../core/widgets/vendor_card.dart';
+import '../../../core/widgets/vendor_filter_bottom_sheet.dart';
 import '../../vendor_detail/views/vendor_detail_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -40,13 +41,47 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
               CustomSearchBar(
                 onChanged: appState.updateExploreSearch,
+                isFilterActive: appState.isExploreFilterActive,
                 onFilterTap: () => _openFilterSheet(context, appState),
               ),
-              const SizedBox(height: 16),
+
+              if (appState.exploreSelectedDate != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentGold.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.event_available_rounded, size: 14, color: AppColors.accentGold),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Available on ${appState.exploreSelectedDate!.day}/${appState.exploreSelectedDate!.month}/${appState.exploreSelectedDate!.year} • ${filteredVendors.length} vendors',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accentGold),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => appState.setExploreDateFilter(null),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text('Clear', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accentGold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
               SizedBox(
                 height: 38,
                 child: ListView(
@@ -82,13 +117,47 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Expanded(
                 child: filteredVendors.isEmpty
                     ? Center(
-                        child: Text(
-                          'No vendors found',
-                          style: AppTypography.subtitle(context),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.event_busy_rounded,
+                              size: 48,
+                              color: AppColors.accentGold.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              appState.exploreSelectedDate != null
+                                  ? 'No vendors available on this date'
+                                  : 'No vendors found',
+                              style: AppTypography.subtitle(context),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              appState.exploreSelectedDate != null
+                                  ? 'Vendors who are booked on this date are hidden. Select another date or clear the day filter.'
+                                  : 'Change your search or filters to discover more vendors.',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
+                            ),
+                            if (appState.isExploreFilterActive) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: () => appState.resetExploreFilters(),
+                                icon: const Icon(Icons.refresh_rounded, size: 14),
+                                label: const Text('Reset All Filters'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.accentGold,
+                                  side: const BorderSide(color: AppColors.accentGold),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                     : GridView.builder(
@@ -129,17 +198,19 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return ExploreFilterBottomSheet(
+        return VendorFilterBottomSheet(
           currentMinPrice: appState.exploreMinPrice,
           currentMaxPrice: appState.exploreMaxPrice,
           currentMinRating: appState.exploreMinRating,
           currentSortBy: appState.exploreSortBy,
-          onApply: ({required minPrice, required maxPrice, required minRating, required sortBy}) {
+          currentSelectedDate: appState.exploreSelectedDate,
+          onApply: ({required minPrice, required maxPrice, required minRating, required sortBy, selectedDate}) {
             appState.applyExploreFilters(
               minPrice: minPrice,
               maxPrice: maxPrice,
               minRating: minRating,
               sortBy: sortBy,
+              selectedDate: selectedDate,
             );
           },
           onReset: () {
@@ -151,217 +222,6 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
   }
 }
 
-class ExploreFilterBottomSheet extends StatefulWidget {
-  final double currentMinPrice;
-  final double currentMaxPrice;
-  final double currentMinRating;
-  final String currentSortBy;
-  final Function({
-    required double minPrice,
-    required double maxPrice,
-    required double minRating,
-    required String sortBy,
-  }) onApply;
-  final VoidCallback onReset;
+typedef ExploreFilterBottomSheet = VendorFilterBottomSheet;
 
-  const ExploreFilterBottomSheet({
-    super.key,
-    required this.currentMinPrice,
-    required this.currentMaxPrice,
-    required this.currentMinRating,
-    required this.currentSortBy,
-    required this.onApply,
-    required this.onReset,
-  });
-
-  @override
-  State<ExploreFilterBottomSheet> createState() => _ExploreFilterBottomSheetState();
-}
-
-class _ExploreFilterBottomSheetState extends State<ExploreFilterBottomSheet> {
-  late RangeValues _priceRange;
-  late double _selectedMinRating;
-  late String _selectedSortBy;
-
-  @override
-  void initState() {
-    super.initState();
-    _priceRange = RangeValues(widget.currentMinPrice, widget.currentMaxPrice);
-    _selectedMinRating = widget.currentMinRating;
-    _selectedSortBy = widget.currentSortBy;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white24 : Colors.black12,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Filter & Sort Vendors',
-                style: AppTypography.heading(context).copyWith(fontSize: 18),
-              ),
-              TextButton(
-                onPressed: () {
-                  widget.onReset();
-                  Navigator.pop(context);
-                },
-                child: const Text('Reset All', style: TextStyle(color: AppColors.error, fontSize: 13)),
-              ),
-            ],
-          ),
-          const Divider(),
-          const SizedBox(height: 10),
-
-          // Price Range Section
-          Text(
-            'Starting Price Range',
-            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('₹${_priceRange.start.toInt()}', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.accentGold)),
-              Text('₹${_priceRange.end.toInt()}+', style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.accentGold)),
-            ],
-          ),
-          RangeSlider(
-            values: _priceRange,
-            min: 0,
-            max: 500000,
-            divisions: 100,
-            activeColor: AppColors.accentGold,
-            inactiveColor: isDark ? Colors.white12 : Colors.grey.shade300,
-            labels: RangeLabels('₹${_priceRange.start.toInt()}', '₹${_priceRange.end.toInt()}'),
-            onChanged: (RangeValues values) {
-              setState(() {
-                _priceRange = values;
-              });
-            },
-          ),
-
-          const SizedBox(height: 14),
-
-          // Star Rating Section
-          Text(
-            'Minimum Rating',
-            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [0.0, 4.0, 4.5, 4.8].map((rating) {
-                final isSelected = _selectedMinRating == rating;
-                final label = rating == 0.0 ? 'Any' : '$rating★ & up';
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(label),
-                    selected: isSelected,
-                    selectedColor: AppColors.accentGold,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) setState(() => _selectedMinRating = rating);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Sort Options
-          Text(
-            'Sort By',
-            style: AppTypography.subtitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _sortChip('popular', 'Recommended'),
-              _sortChip('price_low_high', 'Price: Low to High'),
-              _sortChip('price_high_low', 'Price: High to Low'),
-              _sortChip('rating_high', 'Top Rated'),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Apply CTA Button
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () {
-                widget.onApply(
-                  minPrice: _priceRange.start,
-                  maxPrice: _priceRange.end,
-                  minRating: _selectedMinRating,
-                  sortBy: _selectedSortBy,
-                );
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? AppColors.accentGold : AppColors.primaryBurgundy,
-                foregroundColor: isDark ? Colors.black : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('APPLY FILTERS', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(height: 10),
-        ],
-      ),
-    );
-  }
-
-  Widget _sortChip(String value, String label) {
-    final isSelected = _selectedSortBy == value;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      selectedColor: AppColors.accentGold,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
-      ),
-      onSelected: (selected) {
-        if (selected) setState(() => _selectedSortBy = value);
-      },
-    );
-  }
-}
 

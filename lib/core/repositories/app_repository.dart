@@ -4,6 +4,7 @@ import '../data/mock_data.dart';
 import '../models/booking_model.dart';
 import '../models/category_model.dart';
 import '../models/chat_model.dart';
+import '../models/event_model.dart';
 import '../models/flash_card_model.dart';
 import '../models/help_policy_model.dart';
 import '../models/notification_model.dart';
@@ -19,6 +20,7 @@ import '../services/auth_storage_service.dart';
 
 abstract class AppRepository {
   Future<List<FlashCardModel>> getFlashCards();
+  Future<List<EventModel>> getEvents();
   Future<List<CategoryModel>> getCategories();
   Future<List<ServiceModel>> getPopularServices();
   Future<List<VendorModel>> getNearbyVendors({String? city, String? categoryId, String? search});
@@ -85,7 +87,12 @@ abstract class AppRepository {
 class ApiAppRepository implements AppRepository {
   @override
   Future<List<FlashCardModel>> getFlashCards() async {
-    return [];
+    return List<FlashCardModel>.of(MockData.flashCards);
+  }
+
+  @override
+  Future<List<EventModel>> getEvents() async {
+    return List<EventModel>.of(MockData.events);
   }
 
   @override
@@ -617,6 +624,9 @@ class MockAppRepository implements AppRepository {
 
   @override
   Future<List<FlashCardModel>> getFlashCards() async => List<FlashCardModel>.of(MockData.flashCards);
+
+  @override
+  Future<List<EventModel>> getEvents() async => List<EventModel>.of(MockData.events);
 
   @override
   Future<List<CategoryModel>> getCategories() async => List<CategoryModel>.of(MockData.categories);

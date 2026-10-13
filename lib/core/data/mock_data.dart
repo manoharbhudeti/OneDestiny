@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/category_model.dart';
+import '../models/event_model.dart';
 import '../models/flash_card_model.dart';
 import '../models/help_policy_model.dart';
 import '../models/notification_model.dart';
@@ -108,7 +109,12 @@ class MockData {
     ),
   ];
 
-  static const List<VendorModel> nearbyVendors = [
+  static String relativeDateKey(int offsetDays) {
+    final now = DateTime.now().add(Duration(days: offsetDays));
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  static List<VendorModel> get nearbyVendors => [
     VendorModel(
       id: 'v_1',
       name: 'Lens & Light Studio',
@@ -119,6 +125,7 @@ class MockData {
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
       isFavorite: true,
+      blockedDates: [relativeDateKey(1), relativeDateKey(4)], // Booked Tomorrow & in 4 days
     ),
     VendorModel(
       id: 'v_2',
@@ -129,6 +136,7 @@ class MockData {
       startingPrice: 25000,
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+      blockedDates: [relativeDateKey(0), relativeDateKey(3)], // Booked TODAY & in 3 days
     ),
     VendorModel(
       id: 'v_3',
@@ -139,6 +147,7 @@ class MockData {
       startingPrice: 32000,
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
+      blockedDates: [relativeDateKey(2)],
     ),
     VendorModel(
       id: 'v_4',
@@ -149,6 +158,7 @@ class MockData {
       startingPrice: 12000,
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
+      blockedDates: [relativeDateKey(1), relativeDateKey(5)], // Booked Tomorrow
     ),
     VendorModel(
       id: 'v_5',
@@ -159,6 +169,7 @@ class MockData {
       startingPrice: 15000,
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      blockedDates: [relativeDateKey(0)], // Booked TODAY
     ),
     VendorModel(
       id: 'v_6',
@@ -169,10 +180,11 @@ class MockData {
       startingPrice: 10000,
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=800&q=80',
+      blockedDates: [relativeDateKey(3)],
     ),
   ];
 
-  static const List<VendorModel> trendingVendors = [
+  static List<VendorModel> get trendingVendors => [
     VendorModel(
       id: 'tv_1',
       name: 'Destiny Grand Wedding Planners',
@@ -184,6 +196,7 @@ class MockData {
       imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80',
       isTrending: true,
       isFavorite: true,
+      blockedDates: [relativeDateKey(2), relativeDateKey(6)],
     ),
     VendorModel(
       id: 'tv_2',
@@ -195,6 +208,7 @@ class MockData {
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1545232979-fbf5963d13a2?auto=format&fit=crop&w=1200&q=80',
       isTrending: true,
+      blockedDates: [relativeDateKey(0), relativeDateKey(1)], // Booked TODAY & Tomorrow
     ),
     VendorModel(
       id: 'tv_3',
@@ -206,6 +220,7 @@ class MockData {
       location: 'Hyderabad',
       imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
       isTrending: true,
+      blockedDates: const [], // Always available
     ),
   ];
 
@@ -390,6 +405,296 @@ class MockData {
         'User contact information is shared only with confirmed booked vendors.',
         'Users are responsible for verifying vendor agreements prior to making financial transfers.',
       ],
+    ),
+  ];
+
+  static const List<EventModel> events = [
+    EventModel(
+      id: 'evt_marriage',
+      name: 'Marriage & Wedding',
+      tagline: 'Complete Wedding Arrangements',
+      description:
+          'From candid wedding photography to royal mandap decor, grand catering, and palace venues — discover top verified specialists for your big day.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Complete Arrangement',
+      startingPriceText: 'From ₹1,50,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_m_1',
+          title: 'Photographer & Cinematography',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Candid wedding shots, pre-wedding & 4K cinematic films',
+        ),
+        EventArrangement(
+          id: 'arr_m_2',
+          title: 'Stage & Mandap Decor',
+          categoryName: 'Decoration',
+          icon: Icons.celebration_outlined,
+          description: 'Floral mandap, grand entrance arch & fairy lighting setups',
+        ),
+        EventArrangement(
+          id: 'arr_m_3',
+          title: 'Grand Feast & Royal Catering',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Multi-cuisine banquet, live food counters & dessert display',
+        ),
+        EventArrangement(
+          id: 'arr_m_4',
+          title: 'Bridal Makeup & Styling',
+          categoryName: 'Makeup',
+          icon: Icons.face_retouching_natural_outlined,
+          description: 'HD bridal makeover, hair styling, saree draping & airbrush',
+        ),
+        EventArrangement(
+          id: 'arr_m_5',
+          title: 'Palace Venue & Banquet Lawns',
+          categoryName: 'Venue',
+          icon: Icons.location_city_outlined,
+          description: 'Spacious AC convention halls & luxury open-air lawns',
+        ),
+        EventArrangement(
+          id: 'arr_m_6',
+          title: 'DJ, Sound & Sangeet Setup',
+          categoryName: 'DJ',
+          icon: Icons.headphones_outlined,
+          description: 'High-energy DJ beats, laser show & sangeet sound coordination',
+        ),
+        EventArrangement(
+          id: 'arr_m_7',
+          title: 'Bridal Mehendi Artist',
+          categoryName: 'Mehendi',
+          icon: Icons.brush_outlined,
+          description: 'Organic henna, Arabic & intricate bridal henna patterns',
+        ),
+        EventArrangement(
+          id: 'arr_m_8',
+          title: 'Luxury Baarat Convoy',
+          categoryName: 'Cars',
+          icon: Icons.directions_car_outlined,
+          description: 'Vintage cars, convertibles & VIP convoy arrangements',
+        ),
+        EventArrangement(
+          id: 'arr_m_9',
+          title: 'Full Wedding Planning & Coordination',
+          categoryName: 'Wedding Planning',
+          icon: Icons.auto_awesome_outlined,
+          description: 'End-to-end wedding coordination & guest hospitality',
+        ),
+      ],
+      vendorIds: ['tv_1', 'v_1', 'v_2', 'v_3', 'v_4', 'v_5', 'v_6', 'tv_2', 'tv_3'],
+    ),
+    EventModel(
+      id: 'evt_birthday',
+      name: 'Birthday Celebration',
+      tagline: 'Theme Decor, Cakes & Party Entertainment',
+      description:
+          'Host an unforgettable birthday with customized balloon themes, party photographers, live entertainers, and tasty catering.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Popular',
+      startingPriceText: 'From ₹25,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_b_1',
+          title: 'Balloon & Theme Decor',
+          categoryName: 'Decoration',
+          icon: Icons.celebration_outlined,
+          description: 'Customized balloon ring arches, LED names & cartoon cutouts',
+        ),
+        EventArrangement(
+          id: 'arr_b_2',
+          title: 'Party Photographer',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Candid event photos, family portraits & digital album',
+        ),
+        EventArrangement(
+          id: 'arr_b_3',
+          title: 'Catering & Snacks Buffet',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Live chaat counters, kid-friendly finger foods & dessert bar',
+        ),
+        EventArrangement(
+          id: 'arr_b_4',
+          title: 'DJ & Sound System',
+          categoryName: 'DJ',
+          icon: Icons.headphones_outlined,
+          description: 'Music playback, wireless mics & party lights',
+        ),
+        EventArrangement(
+          id: 'arr_b_5',
+          title: 'Party Banquet Hall',
+          categoryName: 'Venue',
+          icon: Icons.location_city_outlined,
+          description: 'Intimate celebration spaces & resort party lawns',
+        ),
+      ],
+      vendorIds: ['v_1', 'v_2', 'v_3', 'v_5', 'tv_2'],
+    ),
+    EventModel(
+      id: 'evt_engagement',
+      name: 'Engagement & Sangeet',
+      tagline: 'Ring Ceremony, Dance Beats & Cocktails',
+      description:
+          'Curated arrangements for an unforgettable ring exchange and rocking sangeet night with dance choreography & live DJ.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Trending',
+      startingPriceText: 'From ₹60,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_e_1',
+          title: 'Engagement Stage Decor',
+          categoryName: 'Decoration',
+          icon: Icons.celebration_outlined,
+          description: 'Floral ring backdrop, stage fireworks & cold pyro effects',
+        ),
+        EventArrangement(
+          id: 'arr_e_2',
+          title: 'Couple Cinematography',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Slow-motion couple portraits & dance highlight reels',
+        ),
+        EventArrangement(
+          id: 'arr_e_3',
+          title: 'High-Energy DJ & Audio',
+          categoryName: 'DJ',
+          icon: Icons.headphones_outlined,
+          description: 'Club DJ sets, truss lighting & heavy bass subwoofer audio',
+        ),
+        EventArrangement(
+          id: 'arr_e_4',
+          title: 'Cocktail & Dinner Catering',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Mocktails, signature appetizers & lavish dinner spread',
+        ),
+        EventArrangement(
+          id: 'arr_e_5',
+          title: 'Party Glam Makeup',
+          categoryName: 'Makeup',
+          icon: Icons.face_retouching_natural_outlined,
+          description: 'Smokey eyes, radiant glow & hair styling for the evening',
+        ),
+      ],
+      vendorIds: ['v_1', 'v_2', 'v_3', 'v_4', 'v_5', 'tv_1'],
+    ),
+    EventModel(
+      id: 'evt_babyshower',
+      name: 'Baby Shower & Seemantham',
+      tagline: 'Warm Blessings & Traditional Ceremonies',
+      description:
+          'Celebrate new life with traditional floral cradles, auspicious ceremonies, candid family portraits, and traditional food.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Traditional',
+      startingPriceText: 'From ₹30,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_bs_1',
+          title: 'Cradle & Floral Decor',
+          categoryName: 'Decoration',
+          icon: Icons.celebration_outlined,
+          description: 'Handcrafted floral cradles, traditional marigold backdrops',
+        ),
+        EventArrangement(
+          id: 'arr_bs_2',
+          title: 'Maternity & Family Photos',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Warm family blessings & candid maternal portraits',
+        ),
+        EventArrangement(
+          id: 'arr_bs_3',
+          title: 'Traditional Feast Catering',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Authentic festive lunch, traditional sweets & prasadam',
+        ),
+      ],
+      vendorIds: ['v_1', 'v_2', 'v_3', 'v_6'],
+    ),
+    EventModel(
+      id: 'evt_corporate',
+      name: 'Corporate Gala & Summit',
+      tagline: 'Conferences, Seminars & Executive Dinners',
+      description:
+          'Professional conference management, high-tech audiovisual equipment, formal banquet catering, and media coverage.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Corporate',
+      startingPriceText: 'From ₹80,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_c_1',
+          title: 'Audio/Visual & Lighting',
+          categoryName: 'DJ',
+          icon: Icons.headphones_outlined,
+          description: 'Podium mics, LED walls, line array sound & stage truss',
+        ),
+        EventArrangement(
+          id: 'arr_c_2',
+          title: 'Corporate Videography',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Live event streaming, keynote recording & executive reels',
+        ),
+        EventArrangement(
+          id: 'arr_c_3',
+          title: 'Executive Buffet & Hi-Tea',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Corporate hi-tea snacks, international lunch buffet & coffee',
+        ),
+        EventArrangement(
+          id: 'arr_c_4',
+          title: 'Conference Convention Hall',
+          categoryName: 'Venue',
+          icon: Icons.location_city_outlined,
+          description: '5-star hotel conference rooms & large convention centres',
+        ),
+      ],
+      vendorIds: ['v_1', 'v_3', 'v_5', 'tv_2'],
+    ),
+    EventModel(
+      id: 'evt_housewarming',
+      name: 'Housewarming (Gruhapravesam)',
+      tagline: 'Auspicious Rituals & Traditional Feast',
+      description:
+          'Welcome prosperity into your new home with auspicious torans, traditional floral mandapams, and authentic catering.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1545232979-fbf5963d13a2?auto=format&fit=crop&w=1200&q=80',
+      badge: 'Auspicious',
+      startingPriceText: 'From ₹20,000',
+      arrangements: [
+        EventArrangement(
+          id: 'arr_h_1',
+          title: 'Entrance & Floral Torans',
+          categoryName: 'Decoration',
+          icon: Icons.celebration_outlined,
+          description: 'Fresh mango leaf torans, marigold arches & rangoli decor',
+        ),
+        EventArrangement(
+          id: 'arr_h_2',
+          title: 'Gruhapravesam Photography',
+          categoryName: 'Photography',
+          icon: Icons.camera_alt_outlined,
+          description: 'Poojan documentation, home interior shots & family portraits',
+        ),
+        EventArrangement(
+          id: 'arr_h_3',
+          title: 'Satvic Feast Catering',
+          categoryName: 'Catering',
+          icon: Icons.restaurant_outlined,
+          description: 'Pure vegetarian festive food served on banana leaves',
+        ),
+      ],
+      vendorIds: ['v_1', 'v_2', 'v_3', 'v_6'],
     ),
   ];
 }
