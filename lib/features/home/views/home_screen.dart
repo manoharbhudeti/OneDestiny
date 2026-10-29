@@ -44,6 +44,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
+        top: false,
+        left: false,
+        right: false,
         child: RefreshIndicator(
           color: AppColors.accentGold,
           backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -55,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.only(bottom: 24),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               LuxuryHeader(
                 greeting: appState.greeting,

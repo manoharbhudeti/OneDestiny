@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io' as io;
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/location_service.dart';
@@ -110,11 +110,33 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final cardBg = isDark ? AppColors.darkSurface : primaryColor;
+    final mediaQuery = MediaQuery.of(context);
+    final topInset = mediaQuery.padding.top;
+    final screenWidth = mediaQuery.size.width;
+
+    // Responsive breakpoints
+    final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth >= 768 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
+    final horizontalPadding = isSmallScreen
+        ? 12.0
+        : (isDesktop
+            ? 32.0
+            : (isTablet ? 24.0 : 16.0));
+    final topPadding = topInset + (isSmallScreen ? 4.0 : 8.0);
+    final bottomPadding = isSmallScreen ? 8.0 : 12.0;
+
+    final logoHeight = isSmallScreen
+        ? 38.0
+        : (isDesktop ? 48.0 : (isTablet ? 46.0 : 44.0));
+    final avatarSize = isSmallScreen ? 30.0 : (isDesktop ? 36.0 : 34.0);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.fastOutSlowIn,
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -127,6 +149,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
         ],
       ),
       child: Stack(
+        clipBehavior: Clip.hardEdge,
         children: [
           // Background Gold Line Art Graphic Pattern
           Positioned(
@@ -141,318 +164,339 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Fixed Compact Row: Logo + Greeting + Location on Left, Actions on Right
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Brand Logo + Greeting & Location side by side
-                    Expanded(
-                      child: Row(
+          SafeArea(
+            top: false,
+            bottom: false,
+            left: false,
+            right: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1400),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    topPadding,
+                    horizontalPadding,
+                    bottomPadding,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Fixed Compact Row: Logo + Greeting + Location on Left, Actions on Right
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Sharp Logo without tagline
-                          Image.asset(
-                            'assets/images/one_destiny_logo_transparent.png',
-                            height: 46,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                            errorBuilder: (context, error, stackTrace) => Image.asset(
-                              'assets/images/one_destiny_logo.png',
-                              height: 46,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.high,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-
-                          // Hello Manohar & Location dropdown right beside logo
+                          // Brand Logo + Greeting & Location side by side
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
+                            child: Row(
                               children: [
-                                InkWell(
-                                  onTap: _toggleExpansion,
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          widget.greeting,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.1,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      RotationTransition(
-                                        turns: _iconTurns,
-                                        child: const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: AppColors.accentGold,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ],
+                                // Sharp Logo without tagline
+                                Image.asset(
+                                  'assets/images/one_destiny_logo_transparent.png',
+                                  height: logoHeight,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                                    'assets/images/one_destiny_logo.png',
+                                    height: logoHeight,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                InkWell(
-                                  onTap: _openLocationPicker,
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Row(
+                                SizedBox(width: isSmallScreen ? 6 : 10),
+
+                                // Hello Manohar & Location dropdown right beside logo
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
-                                        Icons.location_on_rounded,
-                                        size: 12,
-                                        color: AppColors.accentGold,
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Flexible(
-                                        child: Text(
-                                          _activeLocation,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.description(
-                                            context,
-                                            customColor: Colors.white.withValues(alpha: 0.85),
-                                          ).copyWith(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                      InkWell(
+                                        onTap: _toggleExpansion,
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                widget.greeting,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: AppTypography.heading(context, customColor: Colors.white).copyWith(
+                                                  fontSize: isSmallScreen ? 14 : (isDesktop ? 18 : 16),
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 0.1,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            RotationTransition(
+                                              turns: _iconTurns,
+                                              child: Icon(
+                                                Icons.keyboard_arrow_down_rounded,
+                                                color: AppColors.accentGold,
+                                                size: isSmallScreen ? 16 : 18,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const Icon(
-                                        Icons.arrow_drop_down_rounded,
-                                        color: AppColors.accentGold,
-                                        size: 16,
+                                      const SizedBox(height: 2),
+                                      InkWell(
+                                        onTap: _openLocationPicker,
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.location_on_rounded,
+                                              size: isSmallScreen ? 11 : 12,
+                                              color: AppColors.accentGold,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Flexible(
+                                              child: Text(
+                                                _activeLocation,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: AppTypography.description(
+                                                  context,
+                                                  customColor: Colors.white.withValues(alpha: 0.85),
+                                                ).copyWith(
+                                                  fontSize: isSmallScreen ? 11 : 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.arrow_drop_down_rounded,
+                                              color: AppColors.accentGold,
+                                              size: isSmallScreen ? 14 : 16,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
+                          ),
+
+                          SizedBox(width: isSmallScreen ? 4 : 8),
+
+                          // Actions Row: Notifications Bell, Dynamic Animated Theme Toggle & Profile Avatar
+                          Builder(
+                            builder: (context) {
+                              final unreadCount = AppStateScope.of(context).unreadNotificationCount;
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Notification Bell Icon with Badge Indicator
+                                  Stack(
+                                    children: [
+                                      IconButton(
+                                        padding: EdgeInsets.all(isSmallScreen ? 2 : 4),
+                                        constraints: const BoxConstraints(),
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => const NotificationCenterScreen(),
+                                            ),
+                                          );
+                                        },
+                                        icon: Icon(
+                                          Icons.notifications_outlined,
+                                          color: AppColors.accentGold,
+                                          size: isSmallScreen ? 20 : 22,
+                                        ),
+                                        tooltip: 'Notifications',
+                                      ),
+                                      if (unreadCount > 0)
+                                        Positioned(
+                                          right: 2,
+                                          top: 2,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.error,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 8,
+                                              minHeight: 8,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  SizedBox(width: isSmallScreen ? 2 : 4),
+
+                                  // Dynamic Animated Theme Switcher Icon
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 380),
+                                    transitionBuilder: (Widget child, Animation<double> animation) {
+                                      return RotationTransition(
+                                        turns: Tween<double>(begin: 0.25, end: 1.0).animate(animation),
+                                        child: ScaleTransition(scale: animation, child: child),
+                                      );
+                                    },
+                                    child: IconButton(
+                                      key: ValueKey<bool>(isDark),
+                                      padding: EdgeInsets.all(isSmallScreen ? 2 : 4),
+                                      constraints: const BoxConstraints(),
+                                      visualDensity: VisualDensity.compact,
+                                      onPressed: widget.onThemeToggle,
+                                      icon: Icon(
+                                        isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                                        color: AppColors.accentGold,
+                                        size: isSmallScreen ? 18 : 20,
+                                      ),
+                                      tooltip: 'Toggle Theme',
+                                    ),
+                                  ),
+                                  SizedBox(width: isSmallScreen ? 4 : 8),
+
+                                  // Interactive Profile Avatar
+                                  GestureDetector(
+                                    onTapDown: (_) => setState(() => _isAvatarPressed = true),
+                                    onTapUp: (_) => setState(() => _isAvatarPressed = false),
+                                    onTapCancel: () => setState(() => _isAvatarPressed = false),
+                                    child: AnimatedScale(
+                                      scale: _isAvatarPressed ? 0.92 : 1.0,
+                                      duration: const Duration(milliseconds: 150),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        shape: const CircleBorder(),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: InkWell(
+                                          onTap: widget.onProfileTap,
+                                          customBorder: const CircleBorder(),
+                                          child: Container(
+                                            width: avatarSize,
+                                            height: avatarSize,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: AppColors.accentGold,
+                                                width: 1.5,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.2),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipOval(
+                                              child: _buildHeaderAvatarImage(widget.avatarUrl),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
-                    ),
 
-                    const SizedBox(width: 8),
-
-                    // Actions Row: Notifications Bell, Dynamic Animated Theme Toggle & Profile Avatar
-                    Builder(
-                      builder: (context) {
-                        final unreadCount = AppStateScope.of(context).unreadNotificationCount;
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Notification Bell Icon with Badge Indicator
-                            Stack(
-                              children: [
-                                IconButton(
-                                  padding: const EdgeInsets.all(4),
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const NotificationCenterScreen(),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.notifications_outlined,
-                                    color: AppColors.accentGold,
-                                    size: 22,
+                      // EXPANDABLE USER SUMMARY & STATS PANEL
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.fastOutSlowIn,
+                        child: _isExpanded
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 10),
+                                  Divider(
+                                    color: AppColors.accentGold.withValues(alpha: 0.3),
+                                    height: 1,
                                   ),
-                                  tooltip: 'Notifications',
-                                ),
-                                if (unreadCount > 0)
-                                  Positioned(
-                                    right: 2,
-                                    top: 2,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.error,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      constraints: const BoxConstraints(
-                                        minWidth: 8,
-                                        minHeight: 8,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(width: 4),
+                                  const SizedBox(height: 10),
 
-                        // Dynamic Animated Theme Switcher Icon
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 380),
-                          transitionBuilder: (Widget child, Animation<double> animation) {
-                            return RotationTransition(
-                              turns: Tween<double>(begin: 0.25, end: 1.0).animate(animation),
-                              child: ScaleTransition(scale: animation, child: child),
-                            );
-                          },
-                          child: IconButton(
-                            key: ValueKey<bool>(isDark),
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(),
-                            onPressed: widget.onThemeToggle,
-                            icon: Icon(
-                              isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-                              color: AppColors.accentGold,
-                              size: 20,
-                            ),
-                            tooltip: 'Toggle Theme',
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Interactive Profile Avatar
-                        GestureDetector(
-                          onTapDown: (_) => setState(() => _isAvatarPressed = true),
-                          onTapUp: (_) => setState(() => _isAvatarPressed = false),
-                          onTapCancel: () => setState(() => _isAvatarPressed = false),
-                          child: AnimatedScale(
-                            scale: _isAvatarPressed ? 0.92 : 1.0,
-                            duration: const Duration(milliseconds: 150),
-                            child: Material(
-                              color: Colors.transparent,
-                              shape: const CircleBorder(),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: widget.onProfileTap,
-                                customBorder: const CircleBorder(),
-                                child: Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.accentGold,
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Quick Summary',
+                                        style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: widget.onProfileTap,
+                                        child: const Text(
+                                          'View Profile ›',
+                                          style: TextStyle(
+                                            color: AppColors.accentGold,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  child: ClipOval(
-                                    child: _buildHeaderAvatarImage(widget.avatarUrl),
+
+                                  const SizedBox(height: 10),
+
+                                  // Stats Counter Cards
+                                  Row(
+                                    children: [
+                                      _buildHeaderStatCard(
+                                        context,
+                                        title: 'Bookings',
+                                        value: '${widget.bookingCount}',
+                                        icon: Icons.calendar_month_rounded,
+                                        isSmallScreen: isSmallScreen,
+                                        onTap: () {
+                                          _toggleExpansion();
+                                          widget.onNavigateToTab?.call(2);
+                                        },
+                                      ),
+                                      SizedBox(width: isSmallScreen ? 4 : 8),
+                                      _buildHeaderStatCard(
+                                        context,
+                                        title: 'Active Chats',
+                                        value: '${widget.activeChatCount}',
+                                        icon: Icons.chat_bubble_rounded,
+                                        isSmallScreen: isSmallScreen,
+                                        onTap: () {
+                                          _toggleExpansion();
+                                          widget.onNavigateToTab?.call(3);
+                                        },
+                                      ),
+                                      SizedBox(width: isSmallScreen ? 4 : 8),
+                                      _buildHeaderStatCard(
+                                        context,
+                                        title: 'Saved Vendors',
+                                        value: '${widget.savedVendorCount}',
+                                        icon: Icons.favorite_rounded,
+                                        isSmallScreen: isSmallScreen,
+                                        onTap: () {
+                                          _toggleExpansion();
+                                          widget.onNavigateToTab?.call(1);
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                                  const SizedBox(height: 4),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-
-                // EXPANDABLE USER SUMMARY & STATS PANEL
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.fastOutSlowIn,
-                  child: _isExpanded
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 10),
-                            Divider(
-                              color: AppColors.accentGold.withValues(alpha: 0.3),
-                              height: 1,
-                            ),
-                            const SizedBox(height: 10),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Quick Summary',
-                                  style: AppTypography.subtitle(context, customColor: Colors.white).copyWith(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: widget.onProfileTap,
-                                  child: const Text(
-                                    'View Profile ›',
-                                    style: TextStyle(
-                                      color: AppColors.accentGold,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Stats Counter Cards
-                            Row(
-                              children: [
-                                _buildHeaderStatCard(
-                                  context,
-                                  title: 'Bookings',
-                                  value: '${widget.bookingCount}',
-                                  icon: Icons.calendar_month_rounded,
-                                  onTap: () {
-                                    _toggleExpansion();
-                                    widget.onNavigateToTab?.call(2);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderStatCard(
-                                  context,
-                                  title: 'Active Chats',
-                                  value: '${widget.activeChatCount}',
-                                  icon: Icons.chat_bubble_rounded,
-                                  onTap: () {
-                                    _toggleExpansion();
-                                    widget.onNavigateToTab?.call(3);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderStatCard(
-                                  context,
-                                  title: 'Saved Vendors',
-                                  value: '${widget.savedVendorCount}',
-                                  icon: Icons.favorite_rounded,
-                                  onTap: () {
-                                    _toggleExpansion();
-                                    widget.onNavigateToTab?.call(1);
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -466,6 +510,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
     required String value,
     required IconData icon,
     required VoidCallback onTap,
+    bool isSmallScreen = false,
   }) {
     return Expanded(
       child: Material(
@@ -475,7 +520,10 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            padding: EdgeInsets.symmetric(
+              vertical: isSmallScreen ? 6 : 8,
+              horizontal: isSmallScreen ? 4 : 6,
+            ),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
@@ -488,12 +536,12 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 14, color: AppColors.accentGold),
+                    Icon(icon, size: isSmallScreen ? 12 : 14, color: AppColors.accentGold),
                     const SizedBox(width: 4),
                     Text(
                       value,
                       style: AppTypography.heading(context, customColor: Colors.white).copyWith(
-                        fontSize: 15,
+                        fontSize: isSmallScreen ? 13 : 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -505,7 +553,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.description(context, customColor: Colors.white.withValues(alpha: 0.85)).copyWith(
-                    fontSize: 11,
+                    fontSize: isSmallScreen ? 10 : 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -556,7 +604,7 @@ class _LuxuryHeaderState extends State<LuxuryHeader> with SingleTickerProviderSt
       );
     } else {
       return Image.file(
-        io.File(url),
+        File(url),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const CircleAvatar(
           backgroundColor: Colors.white24,

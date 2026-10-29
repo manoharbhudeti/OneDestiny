@@ -1,6 +1,48 @@
-# OneDestiny Customer App - Changelog & Modification Log
+# CHANGELOG
 
-All notable changes, new feature implementations, configuration updates, and policy disclaimers added to the **OneDestiny Customer App** codebase are documented in this file.
+## 2026-10-29
+
+### Analysis
+- Analyzed header layout structure in `lib/core/widgets/luxury_header.dart` and `lib/features/home/views/home_screen.dart`.
+- Identified that `SafeArea` wrapping the home screen body introduced unwanted top padding (preventing the header from touching the top of the screen) and horizontal margin restrictions.
+- Identified that background decoration (`GoldLineArtPainter`) positioned with `right: -20` caused potential canvas bleed without container clipping.
+- Identified that fixed widths/heights and padding caused edge clipping and lack of responsive adaptation across mobile, tablet, and desktop viewports.
+
+### Added
+- Multi-viewport responsive test suite in `test/luxury_header_test.dart` verifying mobile (320x640), notch safe area (390x844), tablet (768x1024), and desktop (1440x900) layout rendering.
+- Web-safe image handling using `kIsWeb` condition in `_buildHeaderAvatarImage`.
+
+### Changed
+- Configured `home_screen.dart` `SafeArea` to `top: false, left: false, right: false` allowing the header to span 100% viewport width and touch the top edge of the screen.
+- Updated `home_screen.dart` scroll column to `CrossAxisAlignment.stretch` ensuring 100% full-width header expansion.
+- Dynamically integrated `MediaQuery.paddingOf(context).top` into `LuxuryHeader`'s top padding so the background container touches the screen top while content safely avoids status bar / notch cutouts.
+- Implemented responsive layout adapting horizontal padding, logo scale, greeting/location font sizes, and avatar dimensions across Mobile, Tablet, and Desktop resolutions.
+- Added `maxWidth: 1400` content constraint centered within full-width background for desktop viewports.
+
+### Fixed
+- Fixed header cut-off and clipping at screen edges.
+- Fixed unwanted top gap/spacing between header and screen top.
+- Fixed header horizontal overflow and subpixel clipping via `Clip.antiAlias` on container and `Clip.hardEdge` on background stack.
+
+### Refactored
+- Enhanced `_buildHeaderStatCard` to accept responsive scaling parameters.
+- Replaced hardcoded dimensions with dynamic, viewport-aware values.
+
+### Files Modified
+- lib/core/widgets/luxury_header.dart
+- lib/features/home/views/home_screen.dart
+- test/luxury_header_test.dart
+- CHANGELOG.md
+
+### Breaking Changes
+- None
+
+### Testing
+- `flutter analyze`: 0 issues found.
+- `flutter test test/widget_test.dart test/luxury_header_test.dart`: All 5 tests passed across mobile, tablet, and desktop screen sizes.
+
+### Notes
+- Full backward compatibility maintained for all `LuxuryHeader` props, callbacks, and dark/light themes.
 
 ---
 
