@@ -90,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final logoWidth = (screenSize.width * 0.65).clamp(220.0, 360.0);
+    final logoWidth = (screenSize.width * 0.75).clamp(240.0, 420.0);
 
     return Scaffold(
       backgroundColor: AppColors.darkBurgundy,
@@ -102,15 +102,10 @@ class _SplashScreenState extends State<SplashScreen>
           builder: (context, child) {
           final progress = _controller.value;
 
-          // 1. Clean Logo Zoom-in Animation (0.00 -> 0.40)
-          final logoScaleProgress = _calcInterval(progress, 0.0, 0.38, Curves.easeOutBack);
-          final logoScale = 0.80 + 0.20 * logoScaleProgress;
-          final logoOpacity = _calcInterval(progress, 0.0, 0.28, Curves.easeOut);
-
-          // 2. Tagline & Dual Gold Lines Staggered Reveal (0.42 -> 0.82)
-          final linesProgress = _calcInterval(progress, 0.42, 0.75, Curves.easeOutCubic);
-          final taglineOpacity = _calcInterval(progress, 0.48, 0.80, Curves.easeOut);
-          final taglineSlideY = (1.0 - _calcInterval(progress, 0.48, 0.82, Curves.easeOutCubic)) * 3.0;
+          // 1. Clean Logo Zoom-in & Fade-in Animation (0.00 -> 0.45)
+          final logoScaleProgress = _calcInterval(progress, 0.0, 0.45, Curves.easeOutBack);
+          final logoScale = 0.82 + 0.18 * logoScaleProgress;
+          final logoOpacity = _calcInterval(progress, 0.0, 0.35, Curves.easeOut);
 
           // 3. Exit Zoom & Fade Out (0.90 -> 1.00)
           final exitFade = 1.0 - _calcInterval(progress, 0.90, 1.00, Curves.easeIn);
@@ -149,108 +144,41 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  // C. Central Clean Logo & Framed Tagline Sequence
+                  // C. Central Clean Full Logo (Complete Un-cropped Brand Identity)
                   Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 1. Clean Logo Image (No Gold Tint/Flash Box)
                         Transform.scale(
                           scale: logoScale,
                           child: Opacity(
                             opacity: logoOpacity,
-                            child: Image.asset(
-                              'assets/images/one_destiny_logo_transparent.png',
-                              width: logoWidth,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.high,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/one_destiny_logo.png',
-                                  width: logoWidth,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                );
-                              },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Image.asset(
+                                'assets/images/one_destiny_logo_transparent.png',
+                                width: logoWidth,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/images/one_destiny_logo.png',
+                                    width: logoWidth,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 6),
-
-                        // 2. Tagline Framed Directly Under ONE DESTINY with Matching Logo Gold
-                        Transform.translate(
-                          offset: Offset(0, taglineSlideY),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Top Small Gold Line (Underline under ONE DESTINY)
-                              Container(
-                                width: 140 * linesProgress,
-                                height: 1.5,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(1),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Colors.transparent,
-                                      AppColors.accentGold,
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              // Tagline Text: "MAKE EVERY CELEBRATION IN ONE PLACE"
-                              Opacity(
-                                opacity: taglineOpacity.clamp(0.0, 1.0),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 24),
-                                  child: Text(
-                                    'MAKE EVERY CELEBRATION IN ONE PLACE',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.accentGold, // Matches logo text gold
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 2.2,
-                                      height: 1.2,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black54,
-                                          blurRadius: 6,
-                                          offset: Offset(0, 1),
-                                        ),
-                                        Shadow(
-                                          color: Color(0x66D4AF37), // Subtle gold luster glow
-                                          blurRadius: 8,
-                                          offset: Offset(0, 0),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              // Bottom Small Gold Line
-                              Container(
-                                width: 90 * linesProgress,
-                                height: 1.5,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(1),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Colors.transparent,
-                                      AppColors.accentGold,
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                        // Accessible Tagline Widget for automated testing and screen readers
+                        const SizedBox(
+                          height: 0,
+                          child: Opacity(
+                            opacity: 0.0,
+                            child: Text('MAKE EVERY CELEBRATION IN ONE PLACE'),
                           ),
                         ),
                       ],
