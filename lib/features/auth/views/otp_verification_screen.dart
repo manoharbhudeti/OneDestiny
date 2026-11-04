@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/ui_states/ui_states.dart';
 import '../../main/views/main_navigation_screen.dart';
+import 'user_onboarding_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
@@ -103,9 +104,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          AppStateScope.read(context).refreshProfile();
-          AppStateScope.read(context).refreshBookings();
-          _navigateToHome();
+          await AppStateScope.read(context).refreshProfile();
+          await AppStateScope.read(context).refreshBookings();
+          await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
         }
@@ -120,9 +121,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          AppStateScope.read(context).refreshProfile();
-          AppStateScope.read(context).refreshBookings();
-          _navigateToHome();
+          await AppStateScope.read(context).refreshProfile();
+          await AppStateScope.read(context).refreshBookings();
+          await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
         }
@@ -137,9 +138,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          AppStateScope.read(context).refreshProfile();
-          AppStateScope.read(context).refreshBookings();
-          _navigateToHome();
+          await AppStateScope.read(context).refreshProfile();
+          await AppStateScope.read(context).refreshBookings();
+          await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
         }
@@ -150,9 +151,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          AppStateScope.read(context).refreshProfile();
-          AppStateScope.read(context).refreshBookings();
-          _navigateToHome();
+          await AppStateScope.read(context).refreshProfile();
+          await AppStateScope.read(context).refreshBookings();
+          await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
         }
@@ -206,6 +207,51 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (mounted) {
         _showSnack('Failed to resend OTP.');
       }
+    }
+  }
+
+  Future<void> _handlePostOtpNavigation(Map<String, dynamic>? data) async {
+    if (!mounted) return;
+
+    final profile = AppStateScope.read(context).profile;
+    final user = data?['user'] as Map<String, dynamic>? ?? {};
+
+    // Check IsUserOnboarded from backend auth response and profile
+    final bool isUserOnboardedFlag = (user['isUserOnboarded'] as bool?) ??
+        (user['is_user_onboarded'] as bool?) ??
+        (data?['isOnboardingComplete'] as bool?) ??
+        (data?['is_onboarding_complete'] as bool?) ??
+        profile.isUserOnboarded;
+
+    final rawName = (user['name']?.toString() ?? profile.name).trim();
+    final rawEmail = (user['email']?.toString() ?? profile.email).trim();
+
+    // Check if name or email are default placeholders
+    final bool isPlaceholderName =
+        rawName.isEmpty || rawName == 'User' || rawName.startsWith('User ');
+    final bool isPlaceholderEmail =
+        rawEmail.isEmpty || rawEmail.contains('@onedestiny.in');
+
+    final bool isFullyOnboarded =
+        isUserOnboardedFlag && !isPlaceholderName && !isPlaceholderEmail;
+
+    if (!isFullyOnboarded) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserOnboardingScreen(
+            themeModeNotifier: widget.themeModeNotifier,
+            initialName: isPlaceholderName ? '' : rawName,
+            initialEmail: isPlaceholderEmail ? '' : rawEmail,
+            phone: widget.phone.isNotEmpty
+                ? widget.phone
+                : user['phone']?.toString(),
+          ),
+        ),
+        (route) => false,
+      );
+    } else {
+      _navigateToHome();
     }
   }
 

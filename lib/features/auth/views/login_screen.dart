@@ -13,6 +13,7 @@ import '../../help_policies/views/help_policies_screen.dart';
 import '../../main/views/main_navigation_screen.dart';
 import 'otp_verification_screen.dart';
 import 'signup_screen.dart';
+import 'user_onboarding_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -210,17 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res.success) {
         // Refresh app state with user profile
-        AppStateScope.read(context).refreshProfile();
-        AppStateScope.read(context).refreshBookings();
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MainNavigationScreen(
-                themeModeNotifier: widget.themeModeNotifier),
-          ),
-          (route) => false,
-        );
+        await AppStateScope.read(context).refreshProfile();
+        await AppStateScope.read(context).refreshBookings();
+        _handlePostLoginNavigation(res.data);
       } else {
         _showSnack(res.errors.isNotEmpty
             ? res.errors.first
@@ -232,6 +225,54 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       _showSnack('Login failed. Please check your connection.');
+    }
+  }
+
+  void _handlePostLoginNavigation(Map<String, dynamic>? data) {
+    if (!mounted) return;
+
+    final profile = AppStateScope.read(context).profile;
+    final user = data?['user'] as Map<String, dynamic>? ?? {};
+
+    final bool isUserOnboardedFlag = (user['isUserOnboarded'] as bool?) ??
+        (user['is_user_onboarded'] as bool?) ??
+        (data?['isOnboardingComplete'] as bool?) ??
+        (data?['is_onboarding_complete'] as bool?) ??
+        profile.isUserOnboarded;
+
+    final rawName = (user['name']?.toString() ?? profile.name).trim();
+    final rawEmail = (user['email']?.toString() ?? profile.email).trim();
+
+    final bool isPlaceholderName =
+        rawName.isEmpty || rawName == 'User' || rawName.startsWith('User ');
+    final bool isPlaceholderEmail =
+        rawEmail.isEmpty || rawEmail.contains('@onedestiny.in');
+
+    final bool isFullyOnboarded =
+        isUserOnboardedFlag && !isPlaceholderName && !isPlaceholderEmail;
+
+    if (!isFullyOnboarded) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserOnboardingScreen(
+            themeModeNotifier: widget.themeModeNotifier,
+            initialName: isPlaceholderName ? '' : rawName,
+            initialEmail: isPlaceholderEmail ? '' : rawEmail,
+            phone: user['phone']?.toString(),
+          ),
+        ),
+        (route) => false,
+      );
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainNavigationScreen(
+              themeModeNotifier: widget.themeModeNotifier),
+        ),
+        (route) => false,
+      );
     }
   }
 

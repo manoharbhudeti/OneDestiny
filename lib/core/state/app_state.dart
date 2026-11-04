@@ -1,3 +1,4 @@
+import '../network/api_response.dart';
 import '../ui_states/utils/error_message_mapper.dart';
 import 'package:flutter/material.dart';
 
@@ -597,7 +598,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({
+  Future<ApiResponse<UserProfileModel>> updateProfile({
     required String name,
     required String email,
     String? mobile,
@@ -606,10 +607,16 @@ class AppState extends ChangeNotifier {
       name: name,
       email: email,
       mobile: mobile ?? _profile.mobile,
+      isUserOnboarded: true,
     );
     notifyListeners();
 
-    await _repository.updateUserProfile(name: name, email: email, mobile: mobile);
+    final res = await _repository.updateUserProfile(name: name, email: email, mobile: mobile);
+    if (res.success && res.data != null) {
+      _profile = res.data!;
+      notifyListeners();
+    }
+    return res;
   }
 
   Future<void> updateProfileAvatar(String avatarUrl) async {

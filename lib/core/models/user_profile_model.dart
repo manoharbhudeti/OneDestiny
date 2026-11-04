@@ -5,6 +5,7 @@ class UserProfileModel {
   final String avatarUrl;
   final String location;
   final bool notificationsEnabled;
+  final bool isUserOnboarded;
 
   const UserProfileModel({
     required this.name,
@@ -13,6 +14,7 @@ class UserProfileModel {
     required this.avatarUrl,
     this.location = '',
     this.notificationsEnabled = true,
+    this.isUserOnboarded = false,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,11 @@ class UserProfileModel {
         json['cityName']?.toString() ??
         '';
 
+    final bool isUserOnboarded = json['isUserOnboarded'] as bool? ??
+        json['is_user_onboarded'] as bool? ??
+        json['isOnboardingComplete'] as bool? ??
+        false;
+
     return UserProfileModel(
       name: name,
       mobile: rawPhone,
@@ -55,6 +62,7 @@ class UserProfileModel {
       notificationsEnabled: json['notificationsEnabled'] as bool? ??
           json['pushNotificationsEnabled'] as bool? ??
           true,
+      isUserOnboarded: isUserOnboarded,
     );
   }
 
@@ -65,6 +73,7 @@ class UserProfileModel {
     String? avatarUrl,
     String? location,
     bool? notificationsEnabled,
+    bool? isUserOnboarded,
   }) {
     return UserProfileModel(
       name: name ?? this.name,
@@ -73,6 +82,7 @@ class UserProfileModel {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       location: location ?? this.location,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      isUserOnboarded: isUserOnboarded ?? this.isUserOnboarded,
     );
   }
 }

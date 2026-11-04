@@ -17,6 +17,7 @@ class AuthStorageService {
   static const String _keyFavorites = 'favorite_vendor_ids';
   static const String _keyActiveLocation = 'active_location';
   static const String _keyUserLocation = 'user_location';
+  static const String _keyIsUserOnboarded = 'is_user_onboarded';
 
   SharedPreferences? _prefs;
 
@@ -34,6 +35,7 @@ class AuthStorageService {
     String role = 'User',
     String? avatarUrl,
     String? location,
+    bool isUserOnboarded = false,
   }) async {
     final prefs = await _getPrefs;
     await prefs.setString(_keyToken, token);
@@ -44,7 +46,18 @@ class AuthStorageService {
     await prefs.setString(_keyUserRole, role);
     if (avatarUrl != null) await prefs.setString(_keyUserAvatar, avatarUrl);
     if (location != null) await prefs.setString(_keyUserLocation, location);
+    await prefs.setBool(_keyIsUserOnboarded, isUserOnboarded);
     await prefs.setBool(_keyIsLoggedIn, true);
+  }
+
+  Future<bool> isUserOnboarded() async {
+    final prefs = await _getPrefs;
+    return prefs.getBool(_keyIsUserOnboarded) ?? false;
+  }
+
+  Future<void> setOnboarded(bool onboarded) async {
+    final prefs = await _getPrefs;
+    await prefs.setBool(_keyIsUserOnboarded, onboarded);
   }
 
   Future<String?> getToken() async {
@@ -70,6 +83,7 @@ class AuthStorageService {
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       location: prefs.getString(_keyUserLocation) ?? prefs.getString(_keyActiveLocation) ?? '',
       notificationsEnabled: prefs.getBool(_keyNotificationsEnabled) ?? true,
+      isUserOnboarded: prefs.getBool(_keyIsUserOnboarded) ?? false,
     );
   }
 
@@ -80,6 +94,7 @@ class AuthStorageService {
     String? avatarUrl,
     String? location,
     bool? notificationsEnabled,
+    bool? isUserOnboarded,
   }) async {
     final prefs = await _getPrefs;
     if (name != null) await prefs.setString(_keyUserName, name);
@@ -87,6 +102,7 @@ class AuthStorageService {
     if (mobile != null) await prefs.setString(_keyUserPhone, mobile);
     if (avatarUrl != null) await prefs.setString(_keyUserAvatar, avatarUrl);
     if (location != null) await prefs.setString(_keyUserLocation, location);
+    if (isUserOnboarded != null) await prefs.setBool(_keyIsUserOnboarded, isUserOnboarded);
     if (notificationsEnabled != null) {
       await prefs.setBool(_keyNotificationsEnabled, notificationsEnabled);
     }

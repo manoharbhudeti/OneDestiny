@@ -554,6 +554,7 @@ class ApiAppRepository implements AppRepository {
           avatarUrl: res.data!.avatarUrl,
           location: res.data!.location,
           notificationsEnabled: res.data!.notificationsEnabled,
+          isUserOnboarded: res.data!.isUserOnboarded,
         );
         return res.data!;
       }
@@ -596,6 +597,7 @@ class ApiAppRepository implements AppRepository {
         name: name,
         email: email,
         mobile: mobile,
+        isUserOnboarded: true,
       );
     }
 

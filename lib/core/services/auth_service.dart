@@ -478,6 +478,11 @@ class AuthService {
     final phone = user['phone']?.toString();
     final role = user['role']?.toString() ?? 'User';
     final avatarUrl = user['profileImageUrl']?.toString();
+    final isUserOnboarded = (user['isUserOnboarded'] as bool?) ??
+        (user['is_user_onboarded'] as bool?) ??
+        (data['isOnboardingComplete'] as bool?) ??
+        (data['is_onboarding_complete'] as bool?) ??
+        false;
 
     if (token.isNotEmpty) {
       await AuthStorageService.instance.saveAuthData(
@@ -488,6 +493,7 @@ class AuthService {
         phone: phone,
         role: role,
         avatarUrl: avatarUrl,
+        isUserOnboarded: isUserOnboarded,
       );
 
       // Acquire and register FCM token right after successful login
