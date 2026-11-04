@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../chat/views/chat_detail_screen.dart';
 
 import '../../reviews/views/vendor_reviews_screen.dart';
+import '../../../core/ui_states/ui_states.dart';
 
 class VendorDetailScreen extends StatelessWidget {
   final VendorModel vendor;
@@ -268,13 +269,17 @@ class VendorDetailScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     AppStateScope.read(context).createBookingForVendor(currentVendor);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: AppColors.darkPrimaryBurgundy,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        content: Text('Booking request created for ${currentVendor.name}.\n⚠️ Safety Note: Do not pay advance amounts upfront without vendor confirmation.'),
-                      ),
+                    SuccessStateWidget.showSheet(
+                      context,
+                      title: 'Booking Request Sent!',
+                      description:
+                          'Your booking request has been submitted to ${currentVendor.name}.\n\n⚠️ Safety Note: Do not pay advance amounts upfront without vendor confirmation.',
+                      primaryActionLabel: 'Done',
+                      onPrimaryAction: () {
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
                     );
                   },
                   icon: const Icon(Icons.event_available_rounded),

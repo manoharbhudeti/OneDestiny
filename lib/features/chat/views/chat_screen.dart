@@ -1,3 +1,4 @@
+import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/models/chat_model.dart';
@@ -8,7 +9,12 @@ import '../../../core/widgets/custom_search_bar.dart';
 import 'chat_detail_screen.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final ValueChanged<int>? onNavigateToTab;
+
+  const ChatScreen({
+    super.key,
+    this.onNavigateToTab,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -45,21 +51,42 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
                 color: AppColors.accentGold,
                 backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
                 onRefresh: () => appState.refreshConversations(),
-                child: conversations.isEmpty
-                    ? ListView(
+                child: Builder(
+                  builder: (context) {
+                    if (appState.isLoadingChat) {
+                      return SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: SkeletonLoaderCard.conversationList(count: 5),
+                      );
+                    }
+                    if (appState.chatError != null) {
+                      return ErrorStateWidget(
+                        customMessage: appState.chatError,
+                        onRetry: () => appState.refreshConversations(),
+                      );
+                    }
+                    if (conversations.isEmpty) {
+                      return ListView(
                         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                          Center(child: Text('No conversations found', style: AppTypography.subtitle(context))),
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.12),
+                          EmptyStateWidget.noConversations(
+                            onFindVendors: () {
+                              widget.onNavigateToTab?.call(1);
+                            },
+                          ),
                         ],
-                      )
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        itemCount: conversations.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) => _ConversationTile(item: conversations[index]),
-                      ),
+                      );
+                    }
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      itemCount: conversations.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) => _ConversationTile(item: conversations[index]),
+                    );
+                  },
+                ),
               ),
             ),
           ],

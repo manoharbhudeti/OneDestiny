@@ -1,5 +1,116 @@
 # CHANGELOG
 
+## 2026-11-04
+
+### Analysis
+- Analyzed existing UI architecture, state management (`AppStateScope` / `ChangeNotifier`), network client (`ApiService`), and authentication lifecycles.
+- Identified need for a unified, production-grade UI states and visual feedback system supporting all 10 canonical states across both Customer and Vendor application architectures.
+- Inspected Home, Explore, Bookings, Chat, Favorites, Vendor Detail, Auth (Login & OTP), and Profile screens to identify gaps in empty states, skeleton loaders, error sanitization, offline detection, slow network handling, search suggestions, permission handling, 401 session expiration, form field validation, and success modals.
+
+### Added
+- Created complete, reusable UI states architecture in `lib/core/ui_states/`:
+  - `models/ui_state.dart`: Immutable state wrapper `UiState<T>` and `UiStatus` enum covering all 10 states.
+  - `theme/ui_state_style.dart`: Centralized design tokens and typography matching OneDestiny Luxury Burgundy (`#6B1028`) and Champagne Gold (`#D4AF37`).
+  - `utils/error_message_mapper.dart`: Sanitizes technical exceptions, SQL/schema errors, and HTTP status codes into user-friendly messages.
+  - `utils/network_state_handler.dart`: Broadcast bus for 401 session expiration, connectivity changes, and slow request latency detection.
+  - `widgets/empty_state_widget.dart`: Context-specific empty states (bookings, chats, favorites, notifications, vendor requests) with actionable CTAs.
+  - `widgets/skeleton_shimmer.dart` & `skeleton_loader_card.dart`: Custom shimmering linear gradient skeleton loaders matching vendor cards, vendor grid, booking items, and conversation list.
+  - `widgets/inline_loading_button.dart`: Inline loading button with progress spinner and duplicate click prevention.
+  - `widgets/full_screen_loader.dart`: Full-screen loading indicator for critical operations.
+  - `widgets/error_state_widget.dart`: Human-readable error widget with retry debouncing and secondary back navigation.
+  - `widgets/no_internet_widget.dart`: Custom 2D vector flat illustration (`_DisconnectedCloudPainter`) rendering smartphone chassis, cloud, and disconnected Wi-Fi slash with one-tap retry.
+  - `widgets/slow_network_widget.dart`: Non-intrusive floating banner and inline card with request cancellation.
+  - `widgets/no_search_results_widget.dart`: Suggestions box, search query highlighting, and filter reset CTAs.
+  - `widgets/permission_denied_widget.dart`: Permission denial rationale with direct `openAppSettings()` integration and modal bottom sheet helper.
+  - `widgets/session_expired_dialog.dart`: Non-dismissible luxury modal for HTTP 401 session timeouts.
+  - `widgets/form_field_feedback.dart`: Accessible inline form field captions, state borders, and validation helpers (phone, email, OTP, password).
+  - `widgets/success_state_widget.dart`: Animated elastic checkmark confirmation widget and bottom sheet helper.
+  - `widgets/state_view_switcher.dart`: Master declarative state view switcher.
+  - `ui_states.dart`: Unified barrel export file.
+- Added 16 unit and widget tests in `test/ui_states_test.dart` verifying all 10 states, animations, sanitization, validation, and theme switching.
+- Added `test/app_version_test.dart` verifying `AppVersionInfo` deserialization and Development Team UI presentation.
+
+### Changed
+- `lib/core/network/api_response.dart`: Added optional `statusCode` field to `ApiResponse<T>` with backward compatibility.
+- `lib/core/services/api_service.dart`: Added slow request threshold timer (4s), broadcast to `NetworkStateHandler`, and connectivity handling.
+- `lib/core/state/app_state.dart`: Added error tracking and getters for vendors, bookings, chats, and search queries.
+- `lib/main.dart`: Wired global navigator key, subscribed to `NetworkStateHandler.instance.sessionExpiredStream`, and integrated `SessionExpiredDialog` presentation with clean redirection to `LoginScreen`.
+- `lib/features/home/views/home_screen.dart`: Integrated `SkeletonLoaderCard.vendorCardList()`, `ErrorStateWidget`, `NoSearchResultsWidget`, `EmptyStateWidget`, and `SlowNetworkWidget.banner()`.
+- `lib/features/explore/views/explore_screen.dart`: Integrated `SkeletonLoaderCard.vendorGrid()`, `ErrorStateWidget`, `NoSearchResultsWidget`, and `EmptyStateWidget`.
+- `lib/features/bookings/views/bookings_screen.dart`: Integrated `SkeletonLoaderCard.bookingList()`, filter-specific `EmptyStateWidget` (with "Explore Vendors" tab navigation), and `ErrorStateWidget`.
+- `lib/features/chat/views/chat_screen.dart`: Integrated `SkeletonLoaderCard.conversationList()`, `EmptyStateWidget.noConversations()`, and `ErrorStateWidget`.
+- `lib/features/favorites/views/favorites_screen.dart`: Integrated `EmptyStateWidget.noFavorites()`.
+- `lib/features/vendor_detail/views/vendor_detail_screen.dart`: Integrated `SuccessStateWidget.showSheet()` for booking confirmation with safety note and done CTA.
+- `lib/features/auth/views/login_screen.dart`: Integrated `InlineLoadingButton`, `FormFieldFeedback.validatePhone`, `validateEmail`, `validatePassword`, and inline error borders.
+- `lib/features/auth/views/otp_verification_screen.dart`: Integrated `InlineLoadingButton`, `FormFieldFeedback.validateOtp`, and wrapped PIN input in `FormFieldFeedback`.
+- `lib/features/profile/views/profile_screen.dart`: Integrated `PermissionDeniedWidget.showSheet()` fallback on photo/camera access denial.
+- `lib/features/main/views/main_navigation_screen.dart`: Passed tab navigation callbacks to child screens.
+- `lib/core/models/app_version_info.dart`: Restored developers array parsing from `assets/config/app_version.json` to properly map the Development Team (Manohar & Datta) with roles and avatars.
+- Updated brand logo assets across the entire application: Replaced previous logo with the new official One Destiny emblem and typography ("ONE DESTINY - MAKE EVERY CELEBRATION IN ONE PLACE"), processed into high-resolution transparent 32-bit ARGB PNGs (`assets/images/one_destiny_logo_transparent.png` and `assets/images/one_destiny_logo.png`) seamlessly rendering across Luxury Burgundy, Warm Ivory, and Dark theme surfaces.
+- Preserved complete full lockup with tagline in `assets/images/one_destiny_logo_full.png` while standardizing the primary logo assets (`assets/images/one_destiny_logo_transparent.png` and `assets/images/one_destiny_logo.png`) to the clean emblem + namemark, ensuring crystal-clear readability in headers and auth cards.
+- Refined `lib/features/splash/views/splash_screen.dart`: Repositioned the tagline "MAKE EVERY CELEBRATION IN ONE PLACE" directly below the gold underline beneath "ONE DESTINY", eliminating excessive vertical gaps, matching the tagline color to the logo's rich metallic gold (`AppColors.accentGold`), and styling with bold typography (`letterSpacing: 2.2`) and gold luster glow.
+
+### Fixed
+- Fixed unhandled HTTP 401 token expiration silently dropping requests without notifying user.
+- Fixed raw technical errors leaking to UI during network/server timeouts.
+- Fixed duplicate button submissions during authentication and booking submission.
+- Fixed commented-out `json['developers']` deserialization in `AppVersionInfo.fromJson` that prevented Development Team members from displaying in `AboutOneDestinyScreen`.
+
+### Refactored
+- Unified UI state rendering using clean, declarative component architecture.
+- Centralized error message mapping across all features.
+
+### Files Modified
+- lib/core/network/api_response.dart
+- lib/core/services/api_service.dart
+- lib/core/state/app_state.dart
+- lib/core/ui_states/models/ui_state.dart
+- lib/core/ui_states/theme/ui_state_style.dart
+- lib/core/ui_states/utils/error_message_mapper.dart
+- lib/core/ui_states/utils/network_state_handler.dart
+- lib/core/ui_states/widgets/empty_state_widget.dart
+- lib/core/ui_states/widgets/error_state_widget.dart
+- lib/core/ui_states/widgets/form_field_feedback.dart
+- lib/core/ui_states/widgets/full_screen_loader.dart
+- lib/core/ui_states/widgets/inline_loading_button.dart
+- lib/core/ui_states/widgets/no_internet_widget.dart
+- lib/core/ui_states/widgets/no_search_results_widget.dart
+- lib/core/ui_states/widgets/permission_denied_widget.dart
+- lib/core/ui_states/widgets/session_expired_dialog.dart
+- lib/core/ui_states/widgets/skeleton_loader_card.dart
+- lib/core/ui_states/widgets/skeleton_shimmer.dart
+- lib/core/ui_states/widgets/state_view_switcher.dart
+- lib/core/ui_states/widgets/success_state_widget.dart
+- lib/core/ui_states/ui_states.dart
+- lib/features/auth/views/login_screen.dart
+- lib/features/auth/views/otp_verification_screen.dart
+- lib/features/bookings/views/bookings_screen.dart
+- lib/features/chat/views/chat_screen.dart
+- lib/features/explore/views/explore_screen.dart
+- lib/features/favorites/views/favorites_screen.dart
+- lib/features/home/views/home_screen.dart
+- lib/features/main/views/main_navigation_screen.dart
+- lib/features/profile/views/profile_screen.dart
+- lib/features/splash/views/splash_screen.dart
+- lib/features/vendor_detail/views/vendor_detail_screen.dart
+- lib/core/models/app_version_info.dart
+- lib/main.dart
+- test/app_version_test.dart
+- test/ui_states_test.dart
+- CHANGELOG.md
+
+### Breaking Changes
+- None
+
+### Testing
+- `flutter analyze`: 0 issues found across all files.
+- `flutter test`: 25/25 tests passed across `test/app_version_test.dart`, `test/ui_states_test.dart`, `test/luxury_header_test.dart`, `test/paged_response_test.dart`, and `test/widget_test.dart`.
+
+### Notes
+- Designed for unified consumption across both Customer and Vendor application codebases with zero third-party UI state bloat.
+
+---
+
 ## 2026-10-29
 
 ### Analysis

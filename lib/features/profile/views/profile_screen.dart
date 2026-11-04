@@ -9,6 +9,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/ui_states/ui_states.dart';
 import '../../../core/widgets/image_editor_screen.dart';
 import '../../../core/widgets/location_picker_sheet.dart';
 import '../../auth/views/login_screen.dart';
@@ -410,6 +411,16 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
       }
     } catch (e) {
       debugPrint('Image pick error: $e');
+      if (mounted) {
+        PermissionDeniedWidget.showSheet(
+          context,
+          child: PermissionDeniedWidget.photos(
+            isCamera: source == ImageSource.camera,
+            isPermanentlyDenied: true,
+            onDismiss: () => Navigator.of(context).pop(),
+          ),
+        );
+      }
     }
     return null;
   }

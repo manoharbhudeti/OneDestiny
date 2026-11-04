@@ -1,3 +1,4 @@
+import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/state/app_state_scope.dart';
@@ -119,71 +120,61 @@ class _ExploreScreenState extends State<ExploreScreen> with AutomaticKeepAliveCl
               ),
               const SizedBox(height: 14),
               Expanded(
-                child: filteredVendors.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.event_busy_rounded,
-                              size: 48,
-                              color: AppColors.accentGold.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              appState.exploreSelectedDate != null
-                                  ? 'No vendors available on this date'
-                                  : 'No vendors found',
-                              style: AppTypography.subtitle(context),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              appState.exploreSelectedDate != null
-                                  ? 'Vendors who are booked on this date are hidden. Select another date or clear the day filter.'
-                                  : 'Change your search or filters to discover more vendors.',
-                              textAlign: TextAlign.center,
-                              style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 12),
-                            ),
-                            if (appState.isExploreFilterActive) ...[
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                onPressed: () => appState.resetExploreFilters(),
-                                icon: const Icon(Icons.refresh_rounded, size: 14),
-                                label: const Text('Reset All Filters'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.accentGold,
-                                  side: const BorderSide(color: AppColors.accentGold),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      )
-                    : GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 14,
-                          childAspectRatio: 0.75,
-                        ),
-                        itemCount: filteredVendors.length,
-                        itemBuilder: (context, index) {
-                          final vendor = filteredVendors[index];
-                          return VendorCard(
-                            vendor: vendor,
-                            onFavoriteToggle: (_) => AppStateScope.read(context).toggleFavorite(vendor.id),
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => VendorDetailScreen(vendor: vendor),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                child: Builder(
+                  builder: (context) {
+                    if (appState.isLoadingInitial || appState.isLoadingVendors) {
+                      return SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: SkeletonLoaderCard.vendorGrid(count: 6),
+                      );
+                    }
+                    if (appState.vendorsError != null) {
+                      return ErrorStateWidget(
+                        customMessage: appState.vendorsError,
+                        onRetry: () => appState.refreshHome(),
+                      );
+                    }
+                    if (filteredVendors.isEmpty) {
+                      if (appState.isExploreFilterActive || appState.exploreSearchQuery.isNotEmpty) {
+                        return NoSearchResultsWidget(
+                          searchQuery: appState.exploreSearchQuery,
+                          onClearFilters: () => appState.resetExploreFilters(),
+                        );
+                      }
+                      return EmptyStateWidget(
+                        title: 'No Vendors Available',
+                        description: 'There are no active vendors for this category in ${appState.activeLocation} yet.',
+                        icon: Icons.storefront_outlined,
+                        primaryActionLabel: 'Refresh',
+                        onPrimaryAction: () => appState.refreshHome(),
+                      );
+                    }
+                    return GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: 0.75,
                       ),
+                      itemCount: filteredVendors.length,
+                      itemBuilder: (context, index) {
+                        final vendor = filteredVendors[index];
+                        return VendorCard(
+                          vendor: vendor,
+                          onFavoriteToggle: (_) => AppStateScope.read(context).toggleFavorite(vendor.id),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => VendorDetailScreen(vendor: vendor),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),

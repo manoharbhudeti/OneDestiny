@@ -5,18 +5,21 @@ class ApiResponse<T> {
   final T? data;
   final String message;
   final List<String> errors;
+  final int? statusCode;
 
   const ApiResponse({
     required this.success,
     this.data,
     this.message = '',
     this.errors = const [],
+    this.statusCode,
   });
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
-    T Function(dynamic json)? fromJsonT,
-  ) {
+    T Function(dynamic json)? fromJsonT, {
+    int? statusCode,
+  }) {
     T? parsedData;
     if (json['data'] != null && fromJsonT != null) {
       try {
@@ -36,22 +39,25 @@ class ApiResponse<T> {
       data: parsedData,
       message: json['message'] as String? ?? '',
       errors: errorsList,
+      statusCode: statusCode,
     );
   }
 
-  factory ApiResponse.ok(T data, [String message = 'Success']) {
+  factory ApiResponse.ok(T data, [String message = 'Success', int? statusCode = 200]) {
     return ApiResponse<T>(
       success: true,
       data: data,
       message: message,
+      statusCode: statusCode,
     );
   }
 
-  factory ApiResponse.fail(String error, [String message = 'Failed']) {
+  factory ApiResponse.fail(String error, [String message = 'Failed', int? statusCode]) {
     return ApiResponse<T>(
       success: false,
       message: message,
       errors: [error],
+      statusCode: statusCode,
     );
   }
 }

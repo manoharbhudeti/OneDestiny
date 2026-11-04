@@ -8,6 +8,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/ui_states/ui_states.dart';
 import '../../help_policies/views/help_policies_screen.dart';
 import '../../main/views/main_navigation_screen.dart';
 import 'otp_verification_screen.dart';
@@ -43,6 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _usePassword = false;
   bool _obscurePassword = true;
+  String? _phoneError;
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void initState() {
@@ -97,12 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _sendOtp() async {
-
     final phone = _phoneController.text.trim();
-    if (phone.length != 10) {
-      _showSnack('Please enter a valid 10-digit mobile number');
+    final validationError = FormFieldFeedback.validatePhone(phone);
+    if (validationError != null) {
+      setState(() => _phoneError = validationError);
       return;
     }
+    setState(() => _phoneError = null);
 
     phoneNumber = phone;
     setState(() => _loading = true);
@@ -181,10 +186,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnack('Please enter your email and password');
+    final emailErr = FormFieldFeedback.validateEmail(email);
+    final passErr = FormFieldFeedback.validatePassword(password);
+    if (emailErr != null || passErr != null) {
+      setState(() {
+        _emailError = emailErr;
+        _passwordError = passErr;
+      });
       return;
     }
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+    });
 
     setState(() => _loading = true);
 
@@ -312,6 +326,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _phoneController,
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
+                  errorText: _phoneError,
+                  onChanged: (_) {
+                    if (_phoneError != null) setState(() => _phoneError = null);
+                  },
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
@@ -323,6 +341,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  onChanged: (_) {
+                    if (_emailError != null) setState(() => _emailError = null);
+                  },
                 ),
                 const SizedBox(height: 14),
                 _AuthTextField(
@@ -330,6 +352,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   icon: Icons.lock_outline,
                   obscureText: _obscurePassword,
+                  errorText: _passwordError,
+                  onChanged: (_) {
+                    if (_passwordError != null) setState(() => _passwordError = null);
+                  },
                   suffix: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -387,37 +413,14 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 28),
 
               // Primary Login / Send OTP CTA Button
-              SizedBox(
-                width: double.infinity,
+              InlineLoadingButton(
+                label: _usePassword ? 'LOGIN' : 'SEND OTP',
+                isLoading: _loading,
+                backgroundColor: AppColors.primaryBurgundy,
+                foregroundColor: Colors.white,
                 height: 52,
-                child: ElevatedButton(
-                  onPressed: _loading
-                      ? null
-                      : (_usePassword ? _loginWithPassword : _sendOtp),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBurgundy,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 3,
-                  ),
-                  child: _loading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : Text(
-                          _usePassword ? 'LOGIN' : 'SEND OTP',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                ),
+                borderRadius: 14,
+                onPressed: _usePassword ? _loginWithPassword : _sendOtp,
               ),
 
               const SizedBox(height: 28),
@@ -532,6 +535,8 @@ class _AuthTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffix;
   final List<TextInputFormatter>? inputFormatters;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
 
   const _AuthTextField({
     required this.hint,
@@ -541,6 +546,8 @@ class _AuthTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffix,
     this.inputFormatters,
+    this.errorText,
+    this.onChanged,
   });
 
   @override
@@ -552,10 +559,13 @@ class _AuthTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       inputFormatters: inputFormatters,
+      onChanged: onChanged,
       style: AppTypography.description(context),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: AppTypography.description(context, isSecondary: true),
+        errorText: errorText,
+        errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
         prefixIcon: Icon(icon, color: AppColors.accentGold, size: 20),
         suffixIcon: suffix,
         filled: true,
@@ -570,11 +580,16 @@ class _AuthTextField extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-              color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+              color: errorText != null
+                  ? AppColors.error
+                  : (isDark ? AppColors.darkBorder : AppColors.lightBorder)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.accentGold, width: 1.5),
+          borderSide: BorderSide(
+            color: errorText != null ? AppColors.error : AppColors.accentGold,
+            width: 1.5,
+          ),
         ),
       ),
     );

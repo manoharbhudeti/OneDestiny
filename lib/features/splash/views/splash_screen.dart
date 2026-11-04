@@ -110,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
           // 2. Tagline & Dual Gold Lines Staggered Reveal (0.42 -> 0.82)
           final linesProgress = _calcInterval(progress, 0.42, 0.75, Curves.easeOutCubic);
           final taglineOpacity = _calcInterval(progress, 0.48, 0.80, Curves.easeOut);
-          final taglineSlideY = (1.0 - _calcInterval(progress, 0.48, 0.82, Curves.easeOutCubic)) * 14.0;
+          final taglineSlideY = (1.0 - _calcInterval(progress, 0.48, 0.82, Curves.easeOutCubic)) * 3.0;
 
           // 3. Exit Zoom & Fade Out (0.90 -> 1.00)
           final exitFade = 1.0 - _calcInterval(progress, 0.90, 1.00, Curves.easeIn);
@@ -176,51 +176,56 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 6),
 
-                        // 2. Tagline Framed Between Two Small Gold Lines
+                        // 2. Tagline Framed Directly Under ONE DESTINY with Matching Logo Gold
                         Transform.translate(
                           offset: Offset(0, taglineSlideY),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Top Small Gold Line
+                              // Top Small Gold Line (Underline under ONE DESTINY)
                               Container(
-                                width: 80 * linesProgress,
+                                width: 140 * linesProgress,
                                 height: 1.5,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(1),
                                   gradient: const LinearGradient(
                                     colors: [
                                       Colors.transparent,
-                                      AppColors.accentGoldLight,
+                                      AppColors.accentGold,
                                       Colors.transparent,
                                     ],
                                   ),
                                 ),
                               ),
 
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 6),
 
                               // Tagline Text: "MAKE EVERY CELEBRATION IN ONE PLACE"
                               Opacity(
                                 opacity: taglineOpacity.clamp(0.0, 1.0),
                                 child: const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 28),
+                                  padding: EdgeInsets.symmetric(horizontal: 24),
                                   child: Text(
                                     'MAKE EVERY CELEBRATION IN ONE PLACE',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Color(0xFFF7E7B6), // Light Champagne Gold
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 2.0,
-                                      height: 1.3,
+                                      color: AppColors.accentGold, // Matches logo text gold
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 2.2,
+                                      height: 1.2,
                                       shadows: [
                                         Shadow(
-                                          color: Colors.black45,
+                                          color: Colors.black54,
                                           blurRadius: 6,
                                           offset: Offset(0, 1),
+                                        ),
+                                        Shadow(
+                                          color: Color(0x66D4AF37), // Subtle gold luster glow
+                                          blurRadius: 8,
+                                          offset: Offset(0, 0),
                                         ),
                                       ],
                                     ),
@@ -228,18 +233,18 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
 
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 6),
 
                               // Bottom Small Gold Line
                               Container(
-                                width: 80 * linesProgress,
+                                width: 90 * linesProgress,
                                 height: 1.5,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(1),
                                   gradient: const LinearGradient(
                                     colors: [
                                       Colors.transparent,
-                                      AppColors.accentGoldLight,
+                                      AppColors.accentGold,
                                       Colors.transparent,
                                     ],
                                   ),

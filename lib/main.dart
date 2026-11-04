@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/auth_storage_service.dart';
+import 'core/ui_states/ui_states.dart';
+import 'features/auth/views/login_screen.dart';
 import 'core/services/fcm_notification_service.dart';
 import 'core/state/app_state.dart';
 import 'core/state/app_state_scope.dart';
@@ -43,16 +47,42 @@ class OneDestinyApp extends StatefulWidget {
 
 class _OneDestinyAppState extends State<OneDestinyApp> {
   final ValueNotifier<ThemeMode> _themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final AppState _appState;
+  StreamSubscription<void>? _sessionSubscription;
 
   @override
   void initState() {
     super.initState();
     _appState = AppState();
+    _sessionSubscription = NetworkStateHandler.instance.sessionExpiredStream.listen((_) async {
+      await AuthStorageService.instance.clearAuth();
+      _handleSessionExpired();
+    });
+  }
+
+    void _handleSessionExpired() {
+    if (!mounted) return;
+    final navContext = _navigatorKey.currentContext;
+    if (navContext == null || !navContext.mounted) return;
+
+    SessionExpiredDialog.show(
+      navContext,
+      onLoginAgain: () {
+        NetworkStateHandler.instance.resetSessionExpiredGuard();
+        _navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => LoginScreen(themeModeNotifier: _themeModeNotifier),
+          ),
+          (route) => false,
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
+    _sessionSubscription?.cancel();
     _themeModeNotifier.dispose();
     _appState.dispose();
     super.dispose();
@@ -66,6 +96,7 @@ class _OneDestinyAppState extends State<OneDestinyApp> {
         return AppStateScope(
           appState: _appState,
           child: MaterialApp(
+            navigatorKey: _navigatorKey,
             title: 'OneDestiny',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,

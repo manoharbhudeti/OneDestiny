@@ -47,8 +47,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
         onNavigateToTab: _onTabTapped,
       ),
       const ExploreScreen(),
-      const BookingsScreen(),
-      const ChatScreen(),
+      BookingsScreen(onNavigateToTab: _onTabTapped),
+      ChatScreen(onNavigateToTab: _onTabTapped),
       ProfileScreen(themeModeNotifier: widget.themeModeNotifier),
     ];
   }

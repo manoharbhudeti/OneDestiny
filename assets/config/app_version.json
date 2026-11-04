@@ -1,15 +1,15 @@
 {
-  "version": "V 24.8.26",
-  "build": 27,
-  "releaseDate": "2026-08-24",
+  "version": "V 04.11.26",
+  "build": 28,
+  "releaseDate": "2026-11-04",
   "forceUpdate": false,
   "minimumSupportedVersion": "V 24.8.26",
-  "developedBy": "Manohar & Datta",
+  "developedBy": "Ekame Technologies",
   "developers": [
     {
       "name": "Manohar",
-      "role": "Lead Developer",
-      "url": "https://www.linkedin.com/in/manoharbhudeti/"
+      "role": "Developer",
+      "url": ""
     },
     {
       "name": "Datta",
@@ -18,7 +18,6 @@
     }
   ],
   "releaseNotes": [
-    "Added Ratings & Reviews",
     "Improved Notification Center",
     "Added Help & Policies",
     "Improved application performance",

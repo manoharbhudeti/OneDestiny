@@ -1,3 +1,4 @@
+import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/data/mock_data.dart';
@@ -77,6 +78,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 activeChatCount: appState.conversationCount,
                 savedVendorCount: appState.favoriteVendors.length,
               ),
+
+              if (NetworkStateHandler.instance.isSlowNetwork)
+                SlowNetworkWidget.banner(
+                  onCancel: () => appState.refreshHome(),
+                ),
 
               const SizedBox(height: 6),
 
@@ -311,55 +317,33 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               ],
 
               if (appState.isLoadingInitial || appState.isLoadingVendors)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 36),
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.accentGold),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: SkeletonLoaderCard.vendorCardList(count: 3),
+                )
+              else if (appState.vendorsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: ErrorStateWidget(
+                    customMessage: appState.vendorsError,
+                    onRetry: () => appState.refreshHome(),
                   ),
                 )
               else if (displayVendors.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.storefront_outlined,
-                          size: 48,
-                          color: AppColors.accentGold.withValues(alpha: 0.6),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: (appState.isHomeFilterActive || appState.homeSearchQuery.isNotEmpty)
+                      ? NoSearchResultsWidget(
+                          searchQuery: appState.homeSearchQuery,
+                          onClearFilters: () => appState.resetHomeFilters(),
+                        )
+                      : EmptyStateWidget(
+                          title: 'No Vendors Available',
+                          description: 'There are no active vendors in ${appState.activeLocation} for this category yet.',
+                          icon: Icons.storefront_outlined,
+                          primaryActionLabel: 'Refresh Vendors',
+                          onPrimaryAction: () => appState.refreshHome(),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          appState.homeSelectedDate != null
-                              ? 'No vendors available on this date'
-                              : 'No vendors found',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.subtitle(context).copyWith(fontSize: 15),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          appState.homeSelectedDate != null
-                              ? 'Try picking another day or clear the date filter to see all vendors.'
-                              : 'Change your search or category filter to discover more verified vendors.',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 13),
-                        ),
-                        if (appState.isHomeFilterActive) ...[
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: () => appState.resetHomeFilters(),
-                            icon: const Icon(Icons.refresh_rounded, size: 14),
-                            label: const Text('Reset All Filters'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.accentGold,
-                              side: const BorderSide(color: AppColors.accentGold),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
                 )
               else
                 Padding(

@@ -1,3 +1,4 @@
+import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/models/booking_model.dart';
@@ -9,7 +10,12 @@ import '../../chat/views/chat_detail_screen.dart';
 import 'booking_detail_screen.dart';
 
 class BookingsScreen extends StatefulWidget {
-  const BookingsScreen({super.key});
+  final ValueChanged<int>? onNavigateToTab;
+
+  const BookingsScreen({
+    super.key,
+    this.onNavigateToTab,
+  });
 
   @override
   State<BookingsScreen> createState() => _BookingsScreenState();
@@ -132,25 +138,41 @@ class _BookingsScreenState extends State<BookingsScreen> with AutomaticKeepAlive
               const SizedBox(height: 16),
 
               // Bookings List
-              filteredBookings.isEmpty
-                  ? Container(
-                      height: 200,
-                      alignment: Alignment.center,
-                      child: Text(
-                        'No bookings match selected filter',
-                        style: AppTypography.subtitle(context),
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredBookings.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final booking = filteredBookings[index];
-                        return _BookingCard(booking: booking);
-                      },
-                    ),
+              if (appState.isLoadingBookings)
+                SkeletonLoaderCard.bookingList(count: 3)
+              else if (appState.bookingsError != null)
+                ErrorStateWidget(
+                  customMessage: appState.bookingsError,
+                  onRetry: () => appState.refreshBookings(),
+                )
+              else if (filteredBookings.isEmpty)
+                _selectedStatusFilter == 'ALL'
+                    ? EmptyStateWidget.noBookings(
+                        onExploreVendors: () {
+                          widget.onNavigateToTab?.call(1);
+                        },
+                      )
+                    : EmptyStateWidget(
+                        title: 'No $_selectedStatusFilter Bookings',
+                        description:
+                            'You currently have no bookings under "$_selectedStatusFilter". Check "All Requests" to see your other celebrations.',
+                        icon: Icons.event_busy_rounded,
+                        primaryActionLabel: 'View All Requests',
+                        onPrimaryAction: () {
+                          setState(() => _selectedStatusFilter = 'ALL');
+                        },
+                      )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredBookings.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final booking = filteredBookings[index];
+                    return _BookingCard(booking: booking);
+                  },
+                ),
             ],
           ),
         ),

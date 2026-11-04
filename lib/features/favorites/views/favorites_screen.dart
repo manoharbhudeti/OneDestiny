@@ -1,3 +1,4 @@
+import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/state/app_state_scope.dart';
@@ -24,19 +25,10 @@ class FavoritesScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: favoriteVendors.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.favorite_border_rounded,
-                      size: 64,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text('No saved vendors yet', style: AppTypography.subtitle(context)),
-                  ],
-                ),
+            ? EmptyStateWidget.noFavorites(
+                onBrowseVendors: () {
+                  Navigator.of(context).pop();
+                },
               )
             : GridView.builder(
                 padding: const EdgeInsets.all(20),

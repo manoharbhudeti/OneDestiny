@@ -1,3 +1,4 @@
+import '../ui_states/utils/error_message_mapper.dart';
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
@@ -72,6 +73,10 @@ class AppState extends ChangeNotifier {
   bool _isLoadingBookings = false;
   bool _isLoadingChat = false;
 
+  String? _vendorsError;
+  String? _bookingsError;
+  String? _chatError;
+
   String _homeSelectedCategoryId = 'all';
   String _homeSearchQuery = '';
   String _exploreSelectedCategory = 'All';
@@ -107,6 +112,24 @@ class AppState extends ChangeNotifier {
   bool get isLoadingVendors => _isLoadingVendors;
   bool get isLoadingBookings => _isLoadingBookings;
   bool get isLoadingChat => _isLoadingChat;
+  String? get vendorsError => _vendorsError;
+  String? get bookingsError => _bookingsError;
+  String? get chatError => _chatError;
+
+  void clearVendorsError() {
+    _vendorsError = null;
+    notifyListeners();
+  }
+
+  void clearBookingsError() {
+    _bookingsError = null;
+    notifyListeners();
+  }
+
+  void clearChatError() {
+    _chatError = null;
+    notifyListeners();
+  }
 
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
   int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
@@ -141,6 +164,8 @@ class AppState extends ChangeNotifier {
     }
     return 'Welcome to OneDestiny 👋';
   }
+  String get homeSearchQuery => _homeSearchQuery;
+  String get exploreSearchQuery => _exploreSearchQuery;
   String get homeSelectedCategoryId => _homeSelectedCategoryId;
   String get exploreSelectedCategory => _exploreSelectedCategory;
 
@@ -307,6 +332,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshHome() async {
     _isLoadingVendors = true;
+    _vendorsError = null;
     notifyListeners();
     try {
       final trending = await _repository.getTrendingVendors();
@@ -315,7 +341,9 @@ class AppState extends ChangeNotifier {
 
       _trendingVendors = trending.map((v) => v.copyWith(isFavorite: favorites.contains(v.id))).toList();
       _nearbyVendors = nearby.map((v) => v.copyWith(isFavorite: favorites.contains(v.id))).toList();
+      _vendorsError = null;
     } catch (e) {
+      _vendorsError = ErrorMessageMapper.map(e);
       debugPrint('[AppState refreshHome Error] $e');
     } finally {
       _isLoadingVendors = false;
@@ -325,10 +353,13 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshBookings() async {
     _isLoadingBookings = true;
+    _bookingsError = null;
     notifyListeners();
     try {
       _bookings = await _repository.getBookings();
+      _bookingsError = null;
     } catch (e) {
+      _bookingsError = ErrorMessageMapper.map(e);
       debugPrint('[AppState refreshBookings Error] $e');
     } finally {
       _isLoadingBookings = false;
@@ -338,10 +369,13 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshConversations() async {
     _isLoadingChat = true;
+    _chatError = null;
     notifyListeners();
     try {
       _conversations = await _repository.getConversations();
+      _chatError = null;
     } catch (e) {
+      _chatError = ErrorMessageMapper.map(e);
       debugPrint('[AppState refreshConversations Error] $e');
     } finally {
       _isLoadingChat = false;
