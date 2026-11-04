@@ -12,6 +12,7 @@ import '../models/notification_model.dart';
 import '../models/review_model.dart';
 import '../models/service_model.dart';
 import '../models/user_profile_model.dart';
+import '../models/vendor_detail_models.dart';
 import '../models/vendor_model.dart';
 import '../repositories/app_repository.dart';
 import '../services/auth_storage_service.dart';
@@ -486,6 +487,36 @@ class AppState extends ChangeNotifier {
       if (vendor.id == vendorId) return vendor;
     }
     return null;
+  }
+
+  final Map<String, List<VendorPortfolioItem>> _portfolioCache = {};
+
+  Future<List<VendorPortfolioItem>> getVendorPortfolio(VendorModel vendor) async {
+    if (_portfolioCache.containsKey(vendor.id) && _portfolioCache[vendor.id]!.isNotEmpty) {
+      return _portfolioCache[vendor.id]!;
+    }
+
+    List<VendorPortfolioItem> albums = [];
+    final parsedId = int.tryParse(vendor.id);
+    if (parsedId != null) {
+      try {
+        albums = await _repository.getVendorPortfolio(parsedId);
+      } catch (e) {
+        debugPrint('[AppState getVendorPortfolio Error] $e');
+      }
+    }
+
+    if (albums.isEmpty) {
+      albums = MockData.getPortfolioForVendor(vendor.id, category: vendor.category);
+    }
+
+    _portfolioCache[vendor.id] = albums;
+    return albums;
+  }
+
+  Future<List<VendorPortfolioItem>> refreshVendorPortfolio(VendorModel vendor) async {
+    _portfolioCache.remove(vendor.id);
+    return getVendorPortfolio(vendor);
   }
 
   /// Returns candidates/vendors tailored for a specific event (e.g. Marriage)

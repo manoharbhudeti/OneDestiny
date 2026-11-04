@@ -664,7 +664,8 @@ class MockAppRepository implements AppRepository {
   Future<List<VendorServiceItem>> getVendorServices(int vendorId) async => [];
 
   @override
-  Future<List<VendorPortfolioItem>> getVendorPortfolio(int vendorId) async => [];
+  Future<List<VendorPortfolioItem>> getVendorPortfolio(int vendorId) async =>
+      MockData.getPortfolioForVendor(vendorId.toString());
 
   @override
   Future<List<VendorReviewItem>> getVendorReviews(int vendorId) async => [];

@@ -32,10 +32,70 @@ class VendorServiceItem {
   }
 }
 
+class VendorPortfolioMedia {
+  final int id;
+  final String key;
+  final String url;
+  final String presignedUrl;
+  final String mediaType;
+  final bool isCoverPhoto;
+  final bool isGallery;
+  final int sortOrder;
+
+  const VendorPortfolioMedia({
+    required this.id,
+    this.key = '',
+    required this.url,
+    this.presignedUrl = '',
+    this.mediaType = 'photo',
+    this.isCoverPhoto = false,
+    this.isGallery = false,
+    this.sortOrder = 0,
+  });
+
+  String get displayUrl {
+    if (presignedUrl.isNotEmpty) return presignedUrl;
+    return url;
+  }
+
+  bool get isVideo => mediaType.toLowerCase() == 'video';
+  bool get isPhoto => !isVideo;
+
+  factory VendorPortfolioMedia.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['url']?.toString() ?? json['presignedUrl']?.toString() ?? '';
+    final rawPresigned = json['presignedUrl']?.toString() ?? json['url']?.toString() ?? '';
+    return VendorPortfolioMedia(
+      id: json['id'] as int? ?? 0,
+      key: json['key']?.toString() ?? '',
+      url: rawUrl,
+      presignedUrl: rawPresigned,
+      mediaType: json['mediaType']?.toString() ?? 'photo',
+      isCoverPhoto: json['isCoverPhoto'] as bool? ?? false,
+      isGallery: json['isGallery'] as bool? ?? false,
+      sortOrder: json['sortOrder'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'key': key,
+    'url': url,
+    'presignedUrl': presignedUrl,
+    'mediaType': mediaType,
+    'isCoverPhoto': isCoverPhoto,
+    'isGallery': isGallery,
+    'sortOrder': sortOrder,
+  };
+}
+
 class VendorPortfolioItem {
   final int id;
   final String title;
   final String description;
+  final String? coverImageUrl;
+  final String? presignedCoverImageUrl;
+  final bool isFeatured;
+  final List<VendorPortfolioMedia> media;
   final List<String> imageUrls;
   final String? eventType;
   final String? eventDate;
@@ -44,22 +104,96 @@ class VendorPortfolioItem {
     required this.id,
     required this.title,
     required this.description,
-    required this.imageUrls,
+    this.coverImageUrl,
+    this.presignedCoverImageUrl,
+    this.isFeatured = false,
+    this.media = const [],
+    this.imageUrls = const [],
     this.eventType,
     this.eventDate,
   });
 
+  String? get displayCoverUrl {
+    if (presignedCoverImageUrl != null && presignedCoverImageUrl!.isNotEmpty) {
+      return presignedCoverImageUrl;
+    }
+    if (coverImageUrl != null && coverImageUrl!.isNotEmpty) {
+      return coverImageUrl;
+    }
+    final coverMedia = media.where((m) => m.isCoverPhoto && m.displayUrl.isNotEmpty);
+    if (coverMedia.isNotEmpty) {
+      return coverMedia.first.displayUrl;
+    }
+    if (media.isNotEmpty && media.first.displayUrl.isNotEmpty) {
+      return media.first.displayUrl;
+    }
+    if (imageUrls.isNotEmpty) {
+      return imageUrls.first;
+    }
+    return null;
+  }
+
+  List<VendorPortfolioMedia> get photoMedia =>
+      media.where((m) => m.isPhoto && m.displayUrl.isNotEmpty).toList();
+
+  List<String> get allImageUrls {
+    final urlsFromMedia = photoMedia.map((m) => m.displayUrl).toList();
+    if (urlsFromMedia.isNotEmpty) return urlsFromMedia;
+    return imageUrls.where((u) => u.isNotEmpty).toList();
+  }
+
+  int get photoCount => allImageUrls.length;
+
   factory VendorPortfolioItem.fromJson(Map<String, dynamic> json) {
+    final rawMedia = json['media'] as List<dynamic>? ?? [];
+    final mediaList = rawMedia
+        .whereType<Map<String, dynamic>>()
+        .map((m) => VendorPortfolioMedia.fromJson(m))
+        .toList();
+
     final rawUrls = json['imageUrls'] as List<dynamic>? ?? [];
+    final legacyUrls = rawUrls.map((e) => e.toString()).toList();
+
+    final cover = json['presignedCoverImageUrl']?.toString() ?? json['coverImageUrl']?.toString();
+
+    final effectiveMedia = mediaList.isNotEmpty
+        ? mediaList
+        : legacyUrls
+            .asMap()
+            .entries
+            .map((e) => VendorPortfolioMedia(id: e.key + 1, url: e.value, presignedUrl: e.value))
+            .toList();
+
+    final effectiveUrls = legacyUrls.isNotEmpty
+        ? legacyUrls
+        : effectiveMedia.where((m) => m.isPhoto).map((m) => m.displayUrl).toList();
+
     return VendorPortfolioItem(
       id: json['id'] as int? ?? 0,
-      title: json['title']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Portfolio Album',
       description: json['description']?.toString() ?? '',
-      imageUrls: rawUrls.map((e) => e.toString()).toList(),
+      coverImageUrl: json['coverImageUrl']?.toString(),
+      presignedCoverImageUrl: cover,
+      isFeatured: json['isFeatured'] as bool? ?? false,
+      media: effectiveMedia,
+      imageUrls: effectiveUrls,
       eventType: json['eventType']?.toString(),
       eventDate: json['eventDate']?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'description': description,
+    'coverImageUrl': coverImageUrl,
+    'presignedCoverImageUrl': presignedCoverImageUrl,
+    'isFeatured': isFeatured,
+    'media': media.map((m) => m.toJson()).toList(),
+    'imageUrls': imageUrls,
+    'eventType': eventType,
+    'eventDate': eventDate,
+  };
 }
 
 class VendorReviewItem {

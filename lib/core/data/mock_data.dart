@@ -6,6 +6,7 @@ import '../models/help_policy_model.dart';
 import '../models/notification_model.dart';
 import '../models/review_model.dart';
 import '../models/service_model.dart';
+import '../models/vendor_detail_models.dart';
 import '../models/vendor_model.dart';
 
 class MockData {
@@ -697,5 +698,155 @@ class MockData {
       vendorIds: ['v_1', 'v_2', 'v_3', 'v_6'],
     ),
   ];
+
+  static List<VendorPortfolioItem> getPortfolioForVendor(String vendorId, {String? category}) {
+    final cat = (category ?? '').toLowerCase();
+
+    if (cat.contains('decor')) {
+      return [
+        VendorPortfolioItem(
+          id: 201,
+          title: 'Royal Mandap & Floral Decor',
+          description: 'Intricate fresh flower arches, royal canopies, and traditional mandap architecture.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+          isFeatured: true,
+          media: const [
+            VendorPortfolioMedia(id: 2001, url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 2002, url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 2003, url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 2004, url: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 2005, url: 'https://images.unsplash.com/photo-1544077960-604201fe74bc?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+        VendorPortfolioItem(
+          id: 202,
+          title: 'Reception Stage & Ambient Lighting',
+          description: 'Contemporary LED wall backdrops, crystal chandeliers, and fairy-light walkways.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&w=800&q=80',
+          isFeatured: false,
+          media: const [
+            VendorPortfolioMedia(id: 2006, url: 'https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 2007, url: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 2008, url: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 2009, url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+      ];
+    }
+
+    if (cat.contains('cater')) {
+      return [
+        VendorPortfolioItem(
+          id: 301,
+          title: 'Royal Wedding Banquet & Feast',
+          description: 'Lavish multi-cuisine spread with traditional thali counters and artisan breads.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
+          isFeatured: true,
+          media: const [
+            VendorPortfolioMedia(id: 3001, url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 3002, url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 3003, url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 3004, url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+        VendorPortfolioItem(
+          id: 302,
+          title: 'Artisan Desserts & Mocktails',
+          description: 'Live jalebi and kulfi carts, modern molecular mocktails, and decadent pastry stations.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
+          isFeatured: false,
+          media: const [
+            VendorPortfolioMedia(id: 3005, url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 3006, url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 3007, url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+      ];
+    }
+
+    if (cat.contains('makeup') || cat.contains('beauty')) {
+      return [
+        VendorPortfolioItem(
+          id: 401,
+          title: 'Bridal Couture Glamour',
+          description: 'Airbrush bridal artistry, HD waterproof base, and traditional temple jewelry coordination.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
+          isFeatured: true,
+          media: const [
+            VendorPortfolioMedia(id: 4001, url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 4002, url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 4003, url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 4004, url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+        VendorPortfolioItem(
+          id: 402,
+          title: 'Reception & Sangeet Evening Styles',
+          description: 'Glossy glam, Hollywood waves, smokey eyes, and radiant dewy finish.',
+          coverImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+          presignedCoverImageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+          isFeatured: false,
+          media: const [
+            VendorPortfolioMedia(id: 4005, url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+            VendorPortfolioMedia(id: 4006, url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80'),
+            VendorPortfolioMedia(id: 4007, url: 'https://images.unsplash.com/photo-1526045612212-70caf35c14df?auto=format&fit=crop&w=800&q=80'),
+          ],
+        ),
+      ];
+    }
+
+    // Default: Photography / General
+    return [
+      VendorPortfolioItem(
+        id: 101,
+        title: 'Grand Wedding Celebrations',
+        description: 'Traditional rituals, varmala moments, sindoor ceremony, and pure emotional candid shots.',
+        coverImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+        presignedCoverImageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+        isFeatured: true,
+        media: const [
+          VendorPortfolioMedia(id: 1001, url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+          VendorPortfolioMedia(id: 1002, url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1003, url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1004, url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1005, url: 'https://images.unsplash.com/photo-1544077960-604201fe74bc?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1006, url: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80'),
+        ],
+      ),
+      VendorPortfolioItem(
+        id: 102,
+        title: 'Pre-Wedding Romance',
+        description: 'Cinematic couple portraits during sunset, palace backdrops, and timeless poses.',
+        coverImageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
+        presignedCoverImageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
+        isFeatured: false,
+        media: const [
+          VendorPortfolioMedia(id: 1007, url: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+          VendorPortfolioMedia(id: 1008, url: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1009, url: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1010, url: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80'),
+        ],
+      ),
+      VendorPortfolioItem(
+        id: 103,
+        title: 'Sangeet & Haldi Beats',
+        description: 'Energetic dance choreography, yellow marigold splashes, and candid laughter.',
+        coverImageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+        presignedCoverImageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+        isFeatured: false,
+        media: const [
+          VendorPortfolioMedia(id: 1011, url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80', isCoverPhoto: true),
+          VendorPortfolioMedia(id: 1012, url: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1013, url: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=800&q=80'),
+          VendorPortfolioMedia(id: 1014, url: 'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=800&q=80'),
+        ],
+      ),
+    ];
+  }
 }
 
