@@ -478,6 +478,11 @@ class AuthService {
     final phone = user['phone']?.toString();
     final role = user['role']?.toString() ?? 'User';
     final avatarUrl = user['profileImageUrl']?.toString();
+    final userCode = user['cid']?.toString() ??
+        user['user_id']?.toString() ??
+        user['userCode']?.toString() ??
+        user['vid']?.toString() ??
+        (userId > 0 ? 'C${userId.toString().padLeft(6, '0')}' : '');
     final isUserOnboarded = (user['isUserOnboarded'] as bool?) ??
         (user['is_user_onboarded'] as bool?) ??
         (data['isOnboardingComplete'] as bool?) ??
@@ -488,6 +493,7 @@ class AuthService {
       await AuthStorageService.instance.saveAuthData(
         token: token,
         userId: userId,
+        userCode: userCode,
         name: name,
         email: email,
         phone: phone,

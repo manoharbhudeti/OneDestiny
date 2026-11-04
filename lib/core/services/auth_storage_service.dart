@@ -18,6 +18,7 @@ class AuthStorageService {
   static const String _keyActiveLocation = 'active_location';
   static const String _keyUserLocation = 'user_location';
   static const String _keyIsUserOnboarded = 'is_user_onboarded';
+  static const String _keyUserCode = 'user_code';
 
   SharedPreferences? _prefs;
 
@@ -36,10 +37,17 @@ class AuthStorageService {
     String? avatarUrl,
     String? location,
     bool isUserOnboarded = false,
+    String? userCode,
   }) async {
     final prefs = await _getPrefs;
     await prefs.setString(_keyToken, token);
     await prefs.setInt(_keyUserId, userId);
+    final effectiveUserCode = (userCode != null && userCode.isNotEmpty)
+        ? userCode
+        : (userId > 0 ? 'C${userId.toString().padLeft(6, '0')}' : '');
+    if (effectiveUserCode.isNotEmpty) {
+      await prefs.setString(_keyUserCode, effectiveUserCode);
+    }
     await prefs.setString(_keyUserName, name);
     await prefs.setString(_keyUserEmail, email);
     if (phone != null) await prefs.setString(_keyUserPhone, phone);
@@ -48,6 +56,11 @@ class AuthStorageService {
     if (location != null) await prefs.setString(_keyUserLocation, location);
     await prefs.setBool(_keyIsUserOnboarded, isUserOnboarded);
     await prefs.setBool(_keyIsLoggedIn, true);
+  }
+
+  Future<String?> getUserCode() async {
+    final prefs = await _getPrefs;
+    return prefs.getString(_keyUserCode);
   }
 
   Future<bool> isUserOnboarded() async {
@@ -75,7 +88,12 @@ class AuthStorageService {
     final name = prefs.getString(_keyUserName);
     if (name == null) return null;
 
+    final id = prefs.getInt(_keyUserId);
+    final userCode = prefs.getString(_keyUserCode) ??
+        (id != null && id > 0 ? 'C${id.toString().padLeft(6, '0')}' : '');
+
     return UserProfileModel(
+      userId: userCode,
       name: name,
       email: prefs.getString(_keyUserEmail) ?? '',
       mobile: prefs.getString(_keyUserPhone) ?? '',
@@ -88,6 +106,7 @@ class AuthStorageService {
   }
 
   Future<void> updateProfile({
+    String? userId,
     String? name,
     String? email,
     String? mobile,
@@ -97,6 +116,7 @@ class AuthStorageService {
     bool? isUserOnboarded,
   }) async {
     final prefs = await _getPrefs;
+    if (userId != null && userId.isNotEmpty) await prefs.setString(_keyUserCode, userId);
     if (name != null) await prefs.setString(_keyUserName, name);
     if (email != null) await prefs.setString(_keyUserEmail, email);
     if (mobile != null) await prefs.setString(_keyUserPhone, mobile);

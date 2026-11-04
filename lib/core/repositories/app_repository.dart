@@ -548,6 +548,7 @@ class ApiAppRepository implements AppRepository {
       );
       if (res.success && res.data != null && res.data!.name.isNotEmpty && res.data!.name != 'User') {
         await AuthStorageService.instance.updateProfile(
+          userId: res.data!.userId,
           name: res.data!.name,
           email: res.data!.email,
           mobile: res.data!.mobile,
@@ -594,6 +595,7 @@ class ApiAppRepository implements AppRepository {
 
     if (res.success) {
       await AuthStorageService.instance.updateProfile(
+        userId: res.data?.userId,
         name: name,
         email: email,
         mobile: mobile,

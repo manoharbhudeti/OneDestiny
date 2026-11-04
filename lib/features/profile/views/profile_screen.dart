@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/models/booking_model.dart';
@@ -111,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
 
                       const SizedBox(width: 16),
 
-                      // Profile Info: Name, Mobile (Read-Only)
+                      // Profile Info: Name, User ID, Mobile, Email
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,6 +124,50 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            if (profile.userId.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: profile.userId));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: AppColors.darkPrimaryBurgundy,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      duration: const Duration(seconds: 2),
+                                      content: Text('User ID "${profile.userId}" copied to clipboard!'),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentGold.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.5), width: 0.8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.tag_rounded, size: 12, color: AppColors.accentGold),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'User ID: ${profile.userId}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                          color: AppColors.accentGold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.copy_rounded, size: 10, color: AppColors.accentGold),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 3),
                             Row(
                               children: [
@@ -680,6 +725,51 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
                     ],
                   ),
+                  if (profile.userId.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentGold.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.verified_user_outlined, size: 16, color: AppColors.accentGold),
+                              const SizedBox(width: 8),
+                              Text(
+                                'User ID: ${profile.userId}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  color: AppColors.accentGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: profile.userId));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('User ID "${profile.userId}" copied!'),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: const Icon(Icons.copy_rounded, size: 14, color: AppColors.accentGold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   _ProfileTextField(
                     controller: nameController,

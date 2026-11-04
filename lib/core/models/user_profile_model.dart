@@ -1,4 +1,5 @@
 class UserProfileModel {
+  final String userId;
   final String name;
   final String mobile;
   final String email;
@@ -8,6 +9,7 @@ class UserProfileModel {
   final bool isUserOnboarded;
 
   const UserProfileModel({
+    this.userId = '',
     required this.name,
     required this.mobile,
     required this.email,
@@ -18,6 +20,13 @@ class UserProfileModel {
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    final rawUserId = json['cid']?.toString() ??
+        json['user_id']?.toString() ??
+        json['userId']?.toString() ??
+        json['userCode']?.toString() ??
+        json['vid']?.toString() ??
+        (json['id'] != null && json['id'] != 0 ? 'C${json['id'].toString().padLeft(6, '0')}' : '');
+
     final rawName = json['businessName']?.toString() ??
         json['fullName']?.toString() ??
         json['name']?.toString() ??
@@ -52,6 +61,7 @@ class UserProfileModel {
         false;
 
     return UserProfileModel(
+      userId: rawUserId,
       name: name,
       mobile: rawPhone,
       email: rawEmail,
@@ -67,6 +77,7 @@ class UserProfileModel {
   }
 
   UserProfileModel copyWith({
+    String? userId,
     String? name,
     String? mobile,
     String? email,
@@ -76,6 +87,7 @@ class UserProfileModel {
     bool? isUserOnboarded,
   }) {
     return UserProfileModel(
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       mobile: mobile ?? this.mobile,
       email: email ?? this.email,
