@@ -9,10 +9,12 @@ import '../../profile/views/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeModeNotifier;
+  final int initialIndex;
 
   const MainNavigationScreen({
     super.key,
     required this.themeModeNotifier,
+    this.initialIndex = 0,
   });
 
   @override
@@ -30,7 +32,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
 
     _pulseController = AnimationController(
       vsync: this,

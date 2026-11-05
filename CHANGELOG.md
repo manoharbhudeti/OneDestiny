@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-11-05
+
+### Added
+- Created comprehensive application documentation in `docs/APPLICATION_DOCUMENTATION.md` and conversation artifact detailing:
+  - Executive summary and brand identity (Imperial Deep Burgundy `#6B1028`, Champagne Gold `#D4AF37`, official 3D emblem).
+  - High-level architecture, tech stack, and state management flowcharts.
+  - Complete specification of the 10 Canonical UI States architecture.
+  - 5 comprehensive Mermaid diagrams representing user flows: Onboarding & Auth, Discovery & Search, Vendor Selection & Booking, Vendor Communication & Concierge, Profile & Device Security.
+  - Screen-by-screen visual walkthrough with 17 pixel-perfect high-resolution screenshots across all screens and modes.
+  - Development team attribution for **Manohar** and **Datta** (Ekame Technologies).
+  - Data models, API contracts, quality assurance metrics, and build instructions.
+- Captured full-resolution mobile retina screenshot suite in `docs/screenshots/`:
+  - `01_splash_screen.png`: Antialiased 3D gold emblem on deep burgundy.
+  - `02_login_screen.png` & `02b_login_password_tab.png`: Customer authentication options.
+  - `canonical_state_09_form_validation_error.png`: Live form field validation error feedback.
+  - `03_home_screen.png` & `04_home_screen_scrolled.png`: Marketplace hero, deals, and top vendors.
+  - `05_explore_screen.png`: Filterable vendor grid with category chips.
+  - `06_bookings_screen.png`: Bookings dashboard with Canonical State 1A (Empty Bookings).
+  - `07_chat_screen.png`: Vendor messaging with Canonical State 1B (Empty Conversations).
+  - `08_profile_screen.png`: Profile & settings with notifications and security options.
+  - `09_about_onedestiny_screen.png` & `10_development_team.png`: Official release info and Development Team credits (**Manohar** & **Datta**).
+  - `11_vendor_detail_screen.png` & `12_vendor_detail_scrolled.png`: Vendor overview, verified reviews, and package tiers.
+  - `13_favorites_screen.png`: Saved vendor favorites grid.
+  - `14_help_policies_screen.png`: 24/7 Event Concierge, direct phone/WhatsApp contact, and FAQs.
+  - `15_dark_mode_home.png`, `16_dark_mode_explore.png`, `17_dark_mode_about.png`: High-contrast OLED dark theme experience.
+- Added URL deep-linking support (`?screen=...` and `?theme=dark`) to `lib/main.dart` and `MainNavigationScreen` for instant headless inspection and automated screen testing.
+
 ## 2026-11-04
 
 ### Analysis
