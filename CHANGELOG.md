@@ -2,6 +2,10 @@
 
 ## 2026-11-05
 
+### Changed
+- Untracked documentation artifacts, publication PDF/HTML files, and captured screenshots from Git repository (.gitignore).
+- Preserved all generated documentation files, PDF publication, and screenshot suites locally on the user's device (docs/, Desktop, and Documents).
+
 ### Added
 - Created comprehensive application documentation in `docs/APPLICATION_DOCUMENTATION.md` and conversation artifact detailing:
   - Executive summary and brand identity (Imperial Deep Burgundy `#6B1028`, Champagne Gold `#D4AF37`, official 3D emblem).

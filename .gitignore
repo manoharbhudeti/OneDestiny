@@ -49,3 +49,8 @@ app.*.map.json
 **/key.properties
 *.jks
 *.keystore
+
+
+# Local documentation & screenshots (preserved on device, untracked in git)
+/docs/
+*.pdf
