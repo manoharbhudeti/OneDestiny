@@ -115,6 +115,54 @@ class VendorDetailScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate(
                 [
+                  if (currentVendor.hasActiveBooking || appState.hasActiveBookingForVendor(currentVendor.id)) ...[
+                    Builder(builder: (context) {
+                      final activeBooking = appState.getActiveBookingForVendor(currentVendor.id);
+                      final status = currentVendor.bookingStatus ?? activeBooking?.status;
+                      final isConfirmed = status?.toUpperCase() == 'CONFIRMED';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2C2415) : const Color(0xFFFFF9E6),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.6)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isConfirmed ? Icons.check_circle_rounded : Icons.hourglass_top_rounded,
+                              color: AppColors.accentGold,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isConfirmed ? 'Booking Confirmed' : 'Booking Request Pending',
+                                    style: AppTypography.subtitle(context).copyWith(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? AppColors.accentGold : const Color(0xFF8A6D05),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isConfirmed
+                                        ? 'You have a confirmed booking with this vendor.'
+                                        : 'You have already submitted a booking request. Waiting for vendor response.',
+                                    style: AppTypography.description(context, isSecondary: true).copyWith(fontSize: 11.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                   Row(
                     children: [
                       GestureDetector(
@@ -265,33 +313,67 @@ class VendorDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    AppStateScope.read(context).createBookingForVendor(currentVendor);
-                    SuccessStateWidget.showSheet(
-                      context,
-                      title: 'Booking Request Sent!',
-                      description:
-                          'Your booking request has been submitted to ${currentVendor.name}.\n\n⚠️ Safety Note: Do not pay advance amounts upfront without vendor confirmation.',
-                      primaryActionLabel: 'Done',
-                      onPrimaryAction: () {
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.event_available_rounded),
-                  label: const Text('Book Now'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              Builder(builder: (context) {
+                final hasActiveBooking = currentVendor.hasActiveBooking ||
+                    appState.hasActiveBookingForVendor(currentVendor.id);
+                final activeBooking = appState.getActiveBookingForVendor(currentVendor.id);
+                final status = currentVendor.bookingStatus ?? activeBooking?.status;
+                final isConfirmed = status?.toUpperCase() == 'CONFIRMED';
+
+                return Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (hasActiveBooking) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'A booking request already exists with ${currentVendor.name} (${status ?? "Pending"}).',
+                              style: AppTypography.description(context),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                        return;
+                      }
+
+                      AppStateScope.read(context).createBookingForVendor(currentVendor);
+                      SuccessStateWidget.showSheet(
+                        context,
+                        title: 'Booking Request Sent!',
+                        description:
+                            'Your booking request has been submitted to ${currentVendor.name}.\n\n⚠️ Safety Note: Do not pay advance amounts upfront without vendor confirmation.',
+                        primaryActionLabel: 'Done',
+                        onPrimaryAction: () {
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      );
+                    },
+                    icon: Icon(
+                      hasActiveBooking
+                          ? (isConfirmed ? Icons.check_circle_rounded : Icons.hourglass_top_rounded)
+                          : Icons.event_available_rounded,
+                    ),
+                    label: Text(
+                      hasActiveBooking
+                          ? (isConfirmed ? 'Booked' : 'Booking Requested')
+                          : 'Book Now',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: hasActiveBooking
+                          ? (isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE2DDD8))
+                          : primaryColor,
+                      foregroundColor: hasActiveBooking
+                          ? (isDark ? AppColors.accentGold : AppColors.primaryBurgundy)
+                          : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
             ],
           ),
         ),

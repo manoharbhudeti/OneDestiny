@@ -665,6 +665,35 @@ class AppState extends ChangeNotifier {
     await AuthStorageService.instance.saveFavoriteVendorIds(favorites);
   }
 
+  bool hasActiveBookingForVendor(String vendorId) {
+    return _bookings.any((b) =>
+        b.vendorId == vendorId &&
+        (b.status == 'PENDING' ||
+         b.status == 'CONFIRMED' ||
+         b.status == 'TENTATIVE' ||
+         b.status == 'REQUESTED'));
+  }
+
+  BookingModel? getActiveBookingForVendor(String vendorId) {
+    try {
+      return _bookings.firstWhere((b) =>
+          b.vendorId == vendorId &&
+          (b.status == 'PENDING' ||
+           b.status == 'CONFIRMED' ||
+           b.status == 'TENTATIVE' ||
+           b.status == 'REQUESTED'));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? getBookingStatusForVendor(String vendorId) {
+    final active = getActiveBookingForVendor(vendorId);
+    if (active != null) return active.status;
+    final vendor = vendorById(vendorId);
+    return vendor?.bookingStatus;
+  }
+
   Future<bool> createBookingForVendor(
     VendorModel vendor, {
     DateTime? eventDate,
@@ -673,6 +702,12 @@ class AppState extends ChangeNotifier {
     int? guestCount,
     double? budget,
   }) async {
+    // If active booking already exists, prevent sending duplicate request
+    if (vendor.hasActiveBooking || hasActiveBookingForVendor(vendor.id)) {
+      debugPrint('[createBookingForVendor] Active booking already exists for vendor ${vendor.id}. Skipping duplicate request.');
+      return true;
+    }
+
     final parsedVendorId = int.tryParse(vendor.id);
     final bookingDate = eventDate ?? DateTime.now().add(const Duration(days: 30));
 
@@ -688,6 +723,7 @@ class AppState extends ChangeNotifier {
 
       if (res.success && res.data != null) {
         _bookings = [res.data!, ..._bookings];
+        _applyVendorBookingStatus(vendor.id, res.data!.status, int.tryParse(res.data!.id));
         notifyListeners();
         return true;
       }
@@ -711,6 +747,7 @@ class AppState extends ChangeNotifier {
       ),
       ..._bookings,
     ];
+    _applyVendorBookingStatus(vendor.id, 'REQUESTED', null);
     notifyListeners();
     return true;
   }
@@ -807,6 +844,27 @@ class AppState extends ChangeNotifier {
     if (categoryName == 'All') return true;
     final category = categoryName.toLowerCase();
     return vendor.category.toLowerCase().contains(category);
+  }
+
+  void _applyVendorBookingStatus(String vendorId, String status, int? bookingId) {
+    _nearbyVendors = _updateVendorBookingInList(_nearbyVendors, vendorId, status, bookingId);
+    _trendingVendors = _updateVendorBookingInList(_trendingVendors, vendorId, status, bookingId);
+  }
+
+  List<VendorModel> _updateVendorBookingInList(
+    List<VendorModel> vendors,
+    String vendorId,
+    String status,
+    int? bookingId,
+  ) {
+    return vendors.map((vendor) {
+      if (vendor.id != vendorId) return vendor;
+      return vendor.copyWith(
+        bookingStatus: status,
+        bookingId: bookingId,
+        hasActiveBooking: true,
+      );
+    }).toList(growable: false);
   }
 
   List<VendorModel> _toggleFavoriteInList(List<VendorModel> vendors, String vendorId) {

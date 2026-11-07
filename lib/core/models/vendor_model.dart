@@ -11,6 +11,9 @@ class VendorModel {
   final bool isFavorite;
   final List<String> availableDays;
   final List<String> blockedDates;
+  final String? bookingStatus;
+  final int? bookingId;
+  final bool hasActiveBooking;
 
   const VendorModel({
     required this.id,
@@ -25,6 +28,9 @@ class VendorModel {
     this.isFavorite = false,
     this.availableDays = const [],
     this.blockedDates = const [],
+    this.bookingStatus,
+    this.bookingId,
+    this.hasActiveBooking = false,
   });
 
   factory VendorModel.fromJson(Map<String, dynamic> json, {bool isFavorite = false}) {
@@ -45,6 +51,17 @@ class VendorModel {
             .toList() ??
         const <String>[];
 
+    final rawBookingStatus = json['bookingStatus']?.toString();
+    final rawBookingId = json['bookingId'] is int
+        ? json['bookingId'] as int
+        : int.tryParse(json['bookingId']?.toString() ?? '');
+    final bool rawHasActive = json['hasActiveBooking'] as bool? ??
+        (rawBookingStatus != null &&
+            (rawBookingStatus.toUpperCase() == 'PENDING' ||
+             rawBookingStatus.toUpperCase() == 'CONFIRMED' ||
+             rawBookingStatus.toUpperCase() == 'TENTATIVE' ||
+             rawBookingStatus.toUpperCase() == 'REQUESTED'));
+
     return VendorModel(
       id: json['id']?.toString() ?? '',
       name: json['businessName']?.toString() ?? json['name']?.toString() ?? '',
@@ -62,6 +79,9 @@ class VendorModel {
       isFavorite: isFavorite,
       availableDays: days,
       blockedDates: blocked,
+      bookingStatus: rawBookingStatus,
+      bookingId: rawBookingId,
+      hasActiveBooking: rawHasActive,
     );
   }
 
@@ -79,6 +99,9 @@ class VendorModel {
       'isFavorite': isFavorite,
       'availableDays': availableDays,
       'blockedDates': blockedDates,
+      'bookingStatus': bookingStatus,
+      'bookingId': bookingId,
+      'hasActiveBooking': hasActiveBooking,
     };
   }
 
@@ -95,6 +118,9 @@ class VendorModel {
     bool? isFavorite,
     List<String>? availableDays,
     List<String>? blockedDates,
+    String? bookingStatus,
+    int? bookingId,
+    bool? hasActiveBooking,
   }) {
     return VendorModel(
       id: id ?? this.id,
@@ -109,6 +135,9 @@ class VendorModel {
       isFavorite: isFavorite ?? this.isFavorite,
       availableDays: availableDays ?? this.availableDays,
       blockedDates: blockedDates ?? this.blockedDates,
+      bookingStatus: bookingStatus ?? this.bookingStatus,
+      bookingId: bookingId ?? this.bookingId,
+      hasActiveBooking: hasActiveBooking ?? this.hasActiveBooking,
     );
   }
 

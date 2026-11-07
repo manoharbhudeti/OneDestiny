@@ -339,6 +339,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           );
                         },
                         onBookNow: () {
+                          if (vendor.hasActiveBooking) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'A booking request already exists with ${vendor.name} (${vendor.bookingStatus ?? "Pending"}).',
+                                  style: AppTypography.description(context),
+                                ),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                            return;
+                          }
                           AppStateScope.read(context).createBookingForVendor(vendor);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -691,9 +705,11 @@ class _CandidateVendorCard extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton(
-                            onPressed: onBookNow,
+                            onPressed: vendor.hasActiveBooking ? onTap : onBookNow,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryBurgundy,
+                              backgroundColor: vendor.hasActiveBooking
+                                  ? (isDark ? const Color(0xFF333333) : const Color(0xFFE5E0DA))
+                                  : AppColors.primaryBurgundy,
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -701,9 +717,17 @@ class _CandidateVendorCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text(
-                              'Book',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            child: Text(
+                              vendor.hasActiveBooking
+                                  ? (vendor.bookingStatus?.toUpperCase() == 'CONFIRMED' ? 'Booked' : 'Requested')
+                                  : 'Book',
+                              style: TextStyle(
+                                color: vendor.hasActiveBooking
+                                    ? (isDark ? AppColors.accentGold : AppColors.primaryBurgundy)
+                                    : Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],

@@ -187,10 +187,14 @@ class TrendingVendorCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
-                    onPressed: onBookNowTap ?? onTap,
+                    onPressed: vendor.hasActiveBooking ? onTap : (onBookNowTap ?? onTap),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: isDark ? Colors.black : Colors.white,
+                      backgroundColor: vendor.hasActiveBooking
+                          ? (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE5E0DA))
+                          : primaryColor,
+                      foregroundColor: vendor.hasActiveBooking
+                          ? (isDark ? AppColors.accentGold : AppColors.primaryBurgundy)
+                          : (isDark ? Colors.black : Colors.white),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
@@ -198,9 +202,12 @@ class TrendingVendorCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Book Now',
+                      vendor.hasActiveBooking
+                          ? (vendor.bookingStatus?.toUpperCase() == 'CONFIRMED' ? 'Booked' : 'Requested')
+                          : 'Book Now',
                       style: AppTypography.buttonText(context).copyWith(
                         fontSize: 12,
+                        fontWeight: vendor.hasActiveBooking ? FontWeight.bold : FontWeight.w600,
                       ),
                     ),
                   ),

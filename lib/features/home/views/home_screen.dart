@@ -365,6 +365,20 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                           );
                         },
                         onBookNowTap: () {
+                          if (vendor.hasActiveBooking) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'A booking request already exists with ${vendor.name} (${vendor.bookingStatus ?? "Pending"}).',
+                                  style: AppTypography.description(context),
+                                ),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                            return;
+                          }
                           AppStateScope.read(context).createBookingForVendor(vendor);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

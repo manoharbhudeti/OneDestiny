@@ -248,6 +248,9 @@ class VendorFullProfile {
   final List<VendorServiceItem> services;
   final List<VendorPortfolioItem> portfolio;
   final List<VendorReviewItem> recentReviews;
+  final String? bookingStatus;
+  final int? bookingId;
+  final bool hasActiveBooking;
 
   const VendorFullProfile({
     required this.id,
@@ -266,6 +269,9 @@ class VendorFullProfile {
     this.services = const [],
     this.portfolio = const [],
     this.recentReviews = const [],
+    this.bookingStatus,
+    this.bookingId,
+    this.hasActiveBooking = false,
   });
 
   factory VendorFullProfile.fromJson(Map<String, dynamic> json) {
@@ -275,6 +281,17 @@ class VendorFullProfile {
     final rawCities = json['serviceCities'] as List<dynamic>? ?? [];
 
     final coverImg = json['coverImageUrl']?.toString() ?? json['logoUrl']?.toString() ?? '';
+
+    final rawBookingStatus = json['bookingStatus']?.toString();
+    final rawBookingId = json['bookingId'] is int
+        ? json['bookingId'] as int
+        : int.tryParse(json['bookingId']?.toString() ?? '');
+    final bool rawHasActive = json['hasActiveBooking'] as bool? ??
+        (rawBookingStatus != null &&
+            (rawBookingStatus.toUpperCase() == 'PENDING' ||
+             rawBookingStatus.toUpperCase() == 'CONFIRMED' ||
+             rawBookingStatus.toUpperCase() == 'TENTATIVE' ||
+             rawBookingStatus.toUpperCase() == 'REQUESTED'));
 
     return VendorFullProfile(
       id: json['id'] as int? ?? 0,
@@ -295,6 +312,9 @@ class VendorFullProfile {
       services: rawServices.map((e) => VendorServiceItem.fromJson(e as Map<String, dynamic>)).toList(),
       portfolio: rawPortfolio.map((e) => VendorPortfolioItem.fromJson(e as Map<String, dynamic>)).toList(),
       recentReviews: rawReviews.map((e) => VendorReviewItem.fromJson(e as Map<String, dynamic>)).toList(),
+      bookingStatus: rawBookingStatus,
+      bookingId: rawBookingId,
+      hasActiveBooking: rawHasActive,
     );
   }
 }

@@ -201,6 +201,45 @@ class _VendorCardState extends State<VendorCard> with SingleTickerProviderStateM
                     ),
                   ),
                 ),
+
+                // Active Booking Badge (Bottom Left of image)
+                if (widget.vendor.hasActiveBooking)
+                  Positioned(
+                    bottom: 8,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: widget.vendor.bookingStatus?.toUpperCase() == 'CONFIRMED'
+                            ? AppColors.success.withValues(alpha: 0.95)
+                            : AppColors.accentGold.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            widget.vendor.bookingStatus?.toUpperCase() == 'CONFIRMED'
+                                ? Icons.check_circle_rounded
+                                : Icons.hourglass_top_rounded,
+                            size: 11,
+                            color: Colors.black,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            widget.vendor.bookingStatus?.toUpperCase() == 'CONFIRMED'
+                                ? 'Booked'
+                                : 'Requested',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
 

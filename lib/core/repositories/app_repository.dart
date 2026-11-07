@@ -185,6 +185,11 @@ class ApiAppRepository implements AppRepository {
         queryParams['sortBy'] = sortBy;
       }
 
+      final userId = await AuthStorageService.instance.getUserId();
+      if (userId != null && userId > 0) {
+        queryParams['userId'] = userId.toString();
+      }
+
       final favorites = await AuthStorageService.instance.getFavoriteVendorIds();
 
       final paged = await ApiService.instance.getPaged<VendorModel>(
@@ -195,7 +200,7 @@ class ApiAppRepository implements AppRepository {
           final id = map['id']?.toString() ?? '';
           return VendorModel.fromJson(map, isFavorite: favorites.contains(id));
         },
-        requiresAuth: false,
+        requiresAuth: true,
       );
 
       return paged.items;
@@ -208,10 +213,17 @@ class ApiAppRepository implements AppRepository {
   @override
   Future<VendorFullProfile?> getVendorProfile(int vendorId) async {
     try {
+      final userId = await AuthStorageService.instance.getUserId();
+      final queryParams = <String, String>{};
+      if (userId != null && userId > 0) {
+        queryParams['userId'] = userId.toString();
+      }
+
       final res = await ApiService.instance.get<VendorFullProfile>(
         url: ApiConfig.clientVendorProfile(vendorId),
+        queryParams: queryParams.isNotEmpty ? queryParams : null,
         fromJsonT: (json) => VendorFullProfile.fromJson(json as Map<String, dynamic>),
-        requiresAuth: false,
+        requiresAuth: true,
       );
       if (res.success && res.data != null) {
         return res.data;

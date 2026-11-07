@@ -22,11 +22,9 @@ class ApiService {
       'Accept': 'application/json',
     };
 
-    if (requiresAuth) {
-      final token = await AuthStorageService.instance.getToken();
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
+    final token = await AuthStorageService.instance.getToken();
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
     }
 
     return headers;
