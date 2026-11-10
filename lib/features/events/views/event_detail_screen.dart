@@ -5,6 +5,7 @@ import '../../../core/models/vendor_model.dart';
 import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/booking_request_dialog.dart';
 import '../../vendor_detail/views/vendor_detail_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -338,7 +339,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             ),
                           );
                         },
-                        onBookNow: () {
+                        onBookNow: () async {
                           if (vendor.hasActiveBooking) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -353,7 +354,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             );
                             return;
                           }
-                          AppStateScope.read(context).createBookingForVendor(vendor);
+                          final booked = await showBookingRequestDialog(context, vendor);
+                          if (!context.mounted || !booked) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

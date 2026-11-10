@@ -30,6 +30,7 @@ class ApiConfig {
   static String get changePassword => '$_baseUrl/api/auth/change-password';
   static String get sessions => '$_baseUrl/api/auth/sessions';
   static String get logout => '$_baseUrl/api/auth/logout';
+  static String get refresh => '$_baseUrl/api/auth/refresh';
   static String get fcmToken => '$_baseUrl/api/auth/fcm-token';
   static String revokeSession(int id) => '$_baseUrl/api/auth/sessions/$id';
   static String get revokeAllSessions => '$_baseUrl/api/auth/sessions/revoke-all';

@@ -6,6 +6,7 @@ import '../../../core/state/app_state_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/add_cards_carousel.dart';
+import '../../../core/widgets/booking_request_dialog.dart';
 import '../../../core/widgets/custom_search_bar.dart';
 import '../../../core/widgets/luxury_header.dart';
 import '../../../core/widgets/popular_service_card.dart';
@@ -364,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                             ),
                           );
                         },
-                        onBookNowTap: () {
+                        onBookNowTap: () async {
                           if (vendor.hasActiveBooking) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -379,7 +380,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                             );
                             return;
                           }
-                          AppStateScope.read(context).createBookingForVendor(vendor);
+                          final booked = await showBookingRequestDialog(context, vendor);
+                          if (!context.mounted || !booked) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Booking requested for ${vendor.name}', style: AppTypography.description(context)),

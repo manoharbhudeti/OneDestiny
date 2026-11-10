@@ -470,6 +470,8 @@ class AuthService {
 
   Future<void> _saveAuthResponse(Map<String, dynamic> data) async {
     final token = data['accessToken']?.toString() ?? '';
+    final refreshToken = data['refreshToken']?.toString();
+    final expiresAt = DateTime.tryParse(data['expiresAt']?.toString() ?? '');
     final user = data['user'] as Map<String, dynamic>? ?? {};
 
     final userId = user['id'] as int? ?? 0;
@@ -492,6 +494,8 @@ class AuthService {
     if (token.isNotEmpty) {
       await AuthStorageService.instance.saveAuthData(
         token: token,
+        refreshToken: refreshToken,
+        expiresAt: expiresAt,
         userId: userId,
         userCode: userCode,
         name: name,

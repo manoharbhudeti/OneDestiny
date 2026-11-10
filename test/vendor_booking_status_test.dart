@@ -171,7 +171,7 @@ void main() {
       );
 
       final result = await appState.createBookingForVendor(vendorWithBooking);
-      expect(result, isTrue);
+      expect(result, isNotNull);
 
       // Verify no duplicate booking was created in AppState._bookings
       final matchingBookings = appState.bookings.where((b) => b.vendorId == '999');

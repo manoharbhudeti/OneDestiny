@@ -51,6 +51,7 @@ abstract class AppRepository {
   Future<ApiResponse<BookingModel>> bookVendor({
     required int vendorId,
     required DateTime eventDate,
+    String? venue,
     String? location,
     String? notes,
     int? guestCount,
@@ -327,18 +328,25 @@ class ApiAppRepository implements AppRepository {
   Future<ApiResponse<BookingModel>> bookVendor({
     required int vendorId,
     required DateTime eventDate,
+    String? venue,
     String? location,
     String? notes,
     int? guestCount,
     double? budget,
   }) async {
+    final venueText = venue?.trim();
+    final locationText = location?.trim();
+    final noteParts = <String>[
+      if (locationText != null && locationText.isNotEmpty) 'Location: $locationText',
+      if (notes != null && notes.trim().isNotEmpty) notes.trim(),
+    ];
     final response = await ApiService.instance.post<BookingModel>(
       url: ApiConfig.clientVendorBook(vendorId),
       body: {
         'eventType': 'Wedding',
         'eventDate': eventDate.toIso8601String(),
-        'venue': location,
-        'notes': notes,
+        'venue': (venueText != null && venueText.isNotEmpty) ? venueText : locationText,
+        'notes': noteParts.isEmpty ? null : noteParts.join('\n'),
       },
       fromJsonT: (json) {
         if (json is Map<String, dynamic>) {
@@ -349,8 +357,8 @@ class ApiAppRepository implements AppRepository {
               vendorId: vendorId.toString(),
               title: 'Booking #$bId',
               category: 'Wedding Service',
-              dateLabel: '${eventDate.day}/${eventDate.month}/${eventDate.year}',
-              location: location ?? 'Pending location',
+              dateLabel: _bookingDateLabel(eventDate),
+              location: _bookingPlaceLabel(venueText, locationText),
               amount: budget != null ? '₹${budget.toInt()}' : 'Pending quote',
               status: 'PENDING',
               imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=400&q=80',
@@ -363,8 +371,8 @@ class ApiAppRepository implements AppRepository {
           vendorId: vendorId.toString(),
           title: 'Vendor Booking',
           category: 'Wedding Service',
-          dateLabel: '${eventDate.day}/${eventDate.month}/${eventDate.year}',
-          location: location ?? 'Pending location',
+          dateLabel: _bookingDateLabel(eventDate),
+          location: _bookingPlaceLabel(venueText, locationText),
           amount: budget != null ? '₹${budget.toInt()}' : 'Pending quote',
           status: 'PENDING',
           imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=400&q=80',
@@ -700,6 +708,7 @@ class MockAppRepository implements AppRepository {
   Future<ApiResponse<BookingModel>> bookVendor({
     required int vendorId,
     required DateTime eventDate,
+    String? venue,
     String? location,
     String? notes,
     int? guestCount,
@@ -907,4 +916,21 @@ class MockAppRepository implements AppRepository {
       ),
     );
   }
+}
+
+String _bookingDateLabel(DateTime date) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return '${date.day} ${months[date.month - 1]} ${date.year}';
+}
+
+String _bookingPlaceLabel(String? venue, String? location) {
+  final parts = <String>[
+    if (venue != null && venue.trim().isNotEmpty) venue.trim(),
+    if (location != null && location.trim().isNotEmpty) location.trim(),
+  ];
+  if (parts.isEmpty) return 'Pending location';
+  return parts.join(', ');
 }

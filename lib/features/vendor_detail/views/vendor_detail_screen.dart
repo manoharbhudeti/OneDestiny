@@ -8,6 +8,7 @@ import '../../chat/views/chat_detail_screen.dart';
 
 import '../../reviews/views/vendor_reviews_screen.dart';
 import '../../../core/ui_states/ui_states.dart';
+import '../../../core/widgets/booking_request_dialog.dart';
 
 class VendorDetailScreen extends StatelessWidget {
   final VendorModel vendor;
@@ -322,7 +323,7 @@ class VendorDetailScreen extends StatelessWidget {
 
                 return Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       if (hasActiveBooking) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -337,7 +338,8 @@ class VendorDetailScreen extends StatelessWidget {
                         return;
                       }
 
-                      AppStateScope.read(context).createBookingForVendor(currentVendor);
+                      final booked = await showBookingRequestDialog(context, currentVendor);
+                      if (!context.mounted || !booked) return;
                       SuccessStateWidget.showSheet(
                         context,
                         title: 'Booking Request Sent!',

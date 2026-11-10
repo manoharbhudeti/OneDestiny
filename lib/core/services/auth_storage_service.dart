@@ -6,6 +6,8 @@ class AuthStorageService {
   static final AuthStorageService instance = AuthStorageService._();
 
   static const String _keyToken = 'auth_token';
+  static const String _keyRefreshToken = 'refresh_token';
+  static const String _keyTokenExpiresAt = 'token_expires_at';
   static const String _keyUserId = 'user_id';
   static const String _keyUserName = 'user_name';
   static const String _keyUserEmail = 'user_email';
@@ -38,9 +40,21 @@ class AuthStorageService {
     String? location,
     bool isUserOnboarded = false,
     String? userCode,
+    String? refreshToken,
+    DateTime? expiresAt,
   }) async {
     final prefs = await _getPrefs;
     await prefs.setString(_keyToken, token);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString(_keyRefreshToken, refreshToken);
+    } else {
+      await prefs.remove(_keyRefreshToken);
+    }
+    if (expiresAt != null) {
+      await prefs.setString(_keyTokenExpiresAt, expiresAt.toUtc().toIso8601String());
+    } else {
+      await prefs.remove(_keyTokenExpiresAt);
+    }
     await prefs.setInt(_keyUserId, userId);
     final effectiveUserCode = (userCode != null && userCode.isNotEmpty)
         ? userCode
@@ -76,6 +90,34 @@ class AuthStorageService {
   Future<String?> getToken() async {
     final prefs = await _getPrefs;
     return prefs.getString(_keyToken);
+  }
+
+  Future<String?> getRefreshToken() async {
+    final prefs = await _getPrefs;
+    return prefs.getString(_keyRefreshToken);
+  }
+
+  Future<DateTime?> getTokenExpiresAt() async {
+    final prefs = await _getPrefs;
+    final raw = prefs.getString(_keyTokenExpiresAt);
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> saveSessionTokens({
+    required String token,
+    String? refreshToken,
+    DateTime? expiresAt,
+  }) async {
+    final prefs = await _getPrefs;
+    await prefs.setString(_keyToken, token);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString(_keyRefreshToken, refreshToken);
+    }
+    if (expiresAt != null) {
+      await prefs.setString(_keyTokenExpiresAt, expiresAt.toUtc().toIso8601String());
+    }
+    await prefs.setBool(_keyIsLoggedIn, true);
   }
 
   Future<bool> isLoggedIn() async {
@@ -157,6 +199,8 @@ class AuthStorageService {
   Future<void> clearAuth() async {
     final prefs = await _getPrefs;
     await prefs.remove(_keyToken);
+    await prefs.remove(_keyRefreshToken);
+    await prefs.remove(_keyTokenExpiresAt);
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyUserName);
     await prefs.remove(_keyUserEmail);

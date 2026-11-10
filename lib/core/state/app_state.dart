@@ -694,28 +694,33 @@ class AppState extends ChangeNotifier {
     return vendor?.bookingStatus;
   }
 
-  Future<bool> createBookingForVendor(
+  /// Returns null when the request is accepted, or an error message when it is not.
+  Future<String?> createBookingForVendor(
     VendorModel vendor, {
     DateTime? eventDate,
+    String? venue,
     String? location,
     String? notes,
     int? guestCount,
     double? budget,
   }) async {
-    // If active booking already exists, prevent sending duplicate request
     if (vendor.hasActiveBooking || hasActiveBookingForVendor(vendor.id)) {
-      debugPrint('[createBookingForVendor] Active booking already exists for vendor ${vendor.id}. Skipping duplicate request.');
-      return true;
+      return 'A booking request already exists with ${vendor.name}.';
     }
 
     final parsedVendorId = int.tryParse(vendor.id);
     final bookingDate = eventDate ?? DateTime.now().add(const Duration(days: 30));
+    final venueText = (venue != null && venue.trim().isNotEmpty) ? venue.trim() : null;
+    final locationText = (location != null && location.trim().isNotEmpty)
+        ? location.trim()
+        : vendor.location;
 
     if (parsedVendorId != null) {
       final res = await _repository.bookVendor(
         vendorId: parsedVendorId,
         eventDate: bookingDate,
-        location: location ?? vendor.location,
+        venue: venueText ?? locationText,
+        location: locationText,
         notes: notes,
         guestCount: guestCount,
         budget: budget ?? vendor.startingPrice,
@@ -725,22 +730,28 @@ class AppState extends ChangeNotifier {
         _bookings = [res.data!, ..._bookings];
         _applyVendorBookingStatus(vendor.id, res.data!.status, int.tryParse(res.data!.id));
         notifyListeners();
-        return true;
+        return null;
       }
+
+      final message = res.message.trim();
+      return message.isNotEmpty ? message : 'Could not submit the booking request.';
     }
 
-    // Fallback local booking insertion
     final exists = _bookings.any((booking) => booking.vendorId == vendor.id);
-    if (exists) return true;
+    if (exists) return 'A booking request already exists with ${vendor.name}.';
 
+    final place = [
+      if (venueText != null) venueText,
+      if (locationText.isNotEmpty) locationText,
+    ].join(', ');
     _bookings = [
       BookingModel(
         id: 'b_${_bookings.length + 1}',
         vendorId: vendor.id,
         title: vendor.name,
         category: vendor.category,
-        dateLabel: 'Pending date',
-        location: vendor.location,
+        dateLabel: _formatBookingDate(bookingDate),
+        location: place.isEmpty ? vendor.location : place,
         amount: vendor.formattedPrice.replaceFirst('Starts ', ''),
         status: 'REQUESTED',
         imageUrl: vendor.imageUrl,
@@ -749,7 +760,15 @@ class AppState extends ChangeNotifier {
     ];
     _applyVendorBookingStatus(vendor.id, 'REQUESTED', null);
     notifyListeners();
-    return true;
+    return null;
+  }
+
+  String _formatBookingDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Future<bool> cancelBooking(String bookingId, {String? reason}) async {

@@ -3,10 +3,20 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../network/api_response.dart';
 import '../ui_states/utils/error_message_mapper.dart';
 import '../ui_states/utils/network_state_handler.dart';
 import 'auth_storage_service.dart';
+
+enum _RefreshOutcome { success, rejected, missing, unavailable }
+
+class _Transport {
+  final http.Response response;
+  final bool sessionExpired;
+
+  const _Transport(this.response, {this.sessionExpired = false});
+}
 
 class ApiService {
   ApiService._();
@@ -15,6 +25,9 @@ class ApiService {
   final http.Client _client = http.Client();
   static const Duration _timeout = Duration(seconds: 12);
   static const Duration slowRequestThreshold = Duration(seconds: 4);
+  static const Duration _refreshSkew = Duration(seconds: 30);
+
+  Future<_RefreshOutcome>? _refreshInFlight;
 
   Future<Map<String, String>> _getHeaders({bool requiresAuth = true}) async {
     final headers = <String, String>{
@@ -28,6 +41,113 @@ class ApiService {
     }
 
     return headers;
+  }
+
+  Future<bool> _tokenIsExpired() async {
+    final expiresAt = await AuthStorageService.instance.getTokenExpiresAt();
+    if (expiresAt == null) return false;
+    return !expiresAt.toUtc().isAfter(DateTime.now().toUtc().add(_refreshSkew));
+  }
+
+  Future<_RefreshOutcome> _refreshAccessToken() {
+    final existing = _refreshInFlight;
+    if (existing != null) return existing;
+
+    final future = _performTokenRefresh();
+    _refreshInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_refreshInFlight, future)) {
+        _refreshInFlight = null;
+      }
+    });
+  }
+
+  Future<_RefreshOutcome> _performTokenRefresh() async {
+    final refreshToken = await AuthStorageService.instance.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return _RefreshOutcome.missing;
+    }
+
+    try {
+      debugPrint('[API POST] ${ApiConfig.refresh}');
+      final response = await _client
+          .post(
+            Uri.parse(ApiConfig.refresh),
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: json.encode({'refreshToken': refreshToken}),
+          )
+          .timeout(_timeout);
+
+      debugPrint('[API Refresh ${response.statusCode}] ${response.body}');
+      if (response.statusCode == 401 || response.statusCode == 400) {
+        return _RefreshOutcome.rejected;
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return _RefreshOutcome.unavailable;
+      }
+
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      if (decoded is! Map) return _RefreshOutcome.rejected;
+
+      final payload = decoded['data'] is Map ? decoded['data'] as Map : decoded;
+      final accessToken = payload['accessToken']?.toString() ?? '';
+      if (accessToken.isEmpty) return _RefreshOutcome.rejected;
+
+      final nextRefresh = payload['refreshToken']?.toString();
+      final expiresAt = DateTime.tryParse(payload['expiresAt']?.toString() ?? '');
+      await AuthStorageService.instance.saveSessionTokens(
+        token: accessToken,
+        refreshToken: nextRefresh,
+        expiresAt: expiresAt,
+      );
+      NetworkStateHandler.instance.resetSessionExpiredGuard();
+      return _RefreshOutcome.success;
+    } on TimeoutException catch (e) {
+      debugPrint('[API Refresh Timeout] $e');
+      return _RefreshOutcome.unavailable;
+    } on SocketException catch (e) {
+      debugPrint('[API Refresh SocketException] $e');
+      return _RefreshOutcome.unavailable;
+    } catch (e) {
+      debugPrint('[API Refresh Error] $e');
+      return _RefreshOutcome.unavailable;
+    }
+  }
+
+  Future<_Transport> _send({
+    required bool requiresAuth,
+    required Future<http.Response> Function(Map<String, String> headers) call,
+    bool allowRefresh = true,
+  }) async {
+    if (requiresAuth && allowRefresh && await _tokenIsExpired()) {
+      final outcome = await _refreshAccessToken();
+      if (outcome == _RefreshOutcome.rejected || outcome == _RefreshOutcome.missing) {
+        return _Transport(
+          http.Response(
+            '{"success":false,"message":"Your session has expired. Please sign in again."}',
+            401,
+          ),
+          sessionExpired: true,
+        );
+      }
+    }
+
+    var response = await call(await _getHeaders(requiresAuth: requiresAuth));
+    if (response.statusCode != 401 || !requiresAuth || !allowRefresh) {
+      return _Transport(response);
+    }
+
+    final outcome = await _refreshAccessToken();
+    if (outcome == _RefreshOutcome.success) {
+      response = await call(await _getHeaders(requiresAuth: true));
+      return _Transport(response, sessionExpired: response.statusCode == 401);
+    }
+
+    final expired = outcome == _RefreshOutcome.rejected || outcome == _RefreshOutcome.missing;
+    return _Transport(response, sessionExpired: expired);
   }
 
   Future<ApiResponse<T>> get<T>({
@@ -46,17 +166,19 @@ class ApiService {
         });
       }
 
-      final headers = await _getHeaders(requiresAuth: requiresAuth);
       debugPrint('[API GET] $uri');
 
       slowTimer = Timer(slowRequestThreshold, () {
         NetworkStateHandler.instance.setSlowNetwork(true);
       });
 
-      final response = await _client.get(uri, headers: headers).timeout(_timeout);
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        call: (headers) => _client.get(uri, headers: headers).timeout(_timeout),
+      );
       NetworkStateHandler.instance.setSlowNetwork(false);
       NetworkStateHandler.instance.setConnectivity(true);
-      return _handleResponse<T>(response, fromJsonT);
+      return _handleResponse<T>(sent.response, fromJsonT, sessionExpired: sent.sessionExpired);
     } on TimeoutException {
       debugPrint('[API GET Timeout] $url');
       NetworkStateHandler.instance.setSlowNetwork(false);
@@ -101,15 +223,20 @@ class ApiService {
         });
       }
 
-      final headers = await _getHeaders(requiresAuth: requiresAuth);
       debugPrint('[API GET Paged] $uri');
 
-      final response = await _client.get(uri, headers: headers).timeout(_timeout);
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        call: (headers) => _client.get(uri, headers: headers).timeout(_timeout),
+      );
+      final response = sent.response;
       debugPrint('[API GET Paged Response ${response.statusCode}] ${response.body}');
       NetworkStateHandler.instance.setConnectivity(true);
 
       if (response.statusCode == 401) {
-        NetworkStateHandler.instance.notifySessionExpired();
+        if (sent.sessionExpired) {
+          NetworkStateHandler.instance.notifySessionExpired();
+        }
         return const PagedResponse();
       }
 
@@ -138,7 +265,6 @@ class ApiService {
     Timer? slowTimer;
     try {
       final uri = Uri.parse(url);
-      final headers = await _getHeaders(requiresAuth: requiresAuth);
       final encodedBody = body != null ? json.encode(body) : null;
 
       debugPrint('[API POST] $uri | Body: $encodedBody');
@@ -147,13 +273,15 @@ class ApiService {
         NetworkStateHandler.instance.setSlowNetwork(true);
       });
 
-      final response = await _client
-          .post(uri, headers: headers, body: encodedBody)
-          .timeout(_timeout);
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        allowRefresh: url != ApiConfig.refresh,
+        call: (headers) => _client.post(uri, headers: headers, body: encodedBody).timeout(_timeout),
+      );
 
       NetworkStateHandler.instance.setSlowNetwork(false);
       NetworkStateHandler.instance.setConnectivity(true);
-      return _handleResponse<T>(response, fromJsonT);
+      return _handleResponse<T>(sent.response, fromJsonT, sessionExpired: sent.sessionExpired);
     } on TimeoutException {
       debugPrint('[API POST Timeout] $url');
       NetworkStateHandler.instance.setSlowNetwork(false);
@@ -192,7 +320,6 @@ class ApiService {
     Timer? slowTimer;
     try {
       final uri = Uri.parse(url);
-      final headers = await _getHeaders(requiresAuth: requiresAuth);
       final encodedBody = body != null ? json.encode(body) : null;
 
       debugPrint('[API PUT] $uri | Body: $encodedBody');
@@ -201,13 +328,14 @@ class ApiService {
         NetworkStateHandler.instance.setSlowNetwork(true);
       });
 
-      final response = await _client
-          .put(uri, headers: headers, body: encodedBody)
-          .timeout(_timeout);
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        call: (headers) => _client.put(uri, headers: headers, body: encodedBody).timeout(_timeout),
+      );
 
       NetworkStateHandler.instance.setSlowNetwork(false);
       NetworkStateHandler.instance.setConnectivity(true);
-      return _handleResponse<T>(response, fromJsonT);
+      return _handleResponse<T>(sent.response, fromJsonT, sessionExpired: sent.sessionExpired);
     } on TimeoutException {
       debugPrint('[API PUT Timeout] $url');
       NetworkStateHandler.instance.setSlowNetwork(false);
@@ -233,13 +361,15 @@ class ApiService {
   }) async {
     try {
       final uri = Uri.parse(url);
-      final headers = await _getHeaders(requiresAuth: requiresAuth);
 
       debugPrint('[API DELETE] $uri');
 
-      final response = await _client.delete(uri, headers: headers).timeout(_timeout);
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        call: (headers) => _client.delete(uri, headers: headers).timeout(_timeout),
+      );
       NetworkStateHandler.instance.setConnectivity(true);
-      return _handleResponse<T>(response, fromJsonT);
+      return _handleResponse<T>(sent.response, fromJsonT, sessionExpired: sent.sessionExpired);
     } on TimeoutException {
       debugPrint('[API DELETE Timeout] $url');
       return ApiResponse<T>.fail('Connection timed out. Please try again.', 'Request Timeout', 408);
@@ -255,16 +385,24 @@ class ApiService {
 
   ApiResponse<T> _handleResponse<T>(
     http.Response response,
-    T Function(dynamic json)? fromJsonT,
-  ) {
+    T Function(dynamic json)? fromJsonT, {
+    bool sessionExpired = false,
+  }) {
     debugPrint('[API Response ${response.statusCode}] ${response.body}');
 
-    // Intercept 401 Session Expiration centrally
+    // A 401 only ends the session after refresh was attempted and rejected.
     if (response.statusCode == 401) {
-      NetworkStateHandler.instance.notifySessionExpired();
+      if (sessionExpired) {
+        NetworkStateHandler.instance.notifySessionExpired();
+        return ApiResponse<T>.fail(
+          'Your session has expired. Please sign in again.',
+          'Session Expired',
+          401,
+        );
+      }
       return ApiResponse<T>.fail(
-        'Your session has expired. Please sign in again.',
-        'Session Expired',
+        'Could not refresh your session. Please try again.',
+        'Session Refresh Failed',
         401,
       );
     }

@@ -60,10 +60,7 @@ class BookingModel {
           json['category']?.toString() ??
           'Wedding Service',
       dateLabel: formattedDate,
-      location: json['venue']?.toString() ??
-          json['eventLocation']?.toString() ??
-          json['location']?.toString() ??
-          'Location pending',
+      location: _bookingPlace(json),
       amount: formattedAmount,
       status: statusStr.toUpperCase(),
       imageUrl: coverImg.isNotEmpty
@@ -95,4 +92,32 @@ class BookingModel {
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }
+}
+
+String _bookingPlace(Map<String, dynamic> json) {
+  final venue = json['venue']?.toString().trim();
+  final explicit = json['eventLocation']?.toString().trim();
+  final direct = json['location']?.toString().trim();
+  String? fromNotes;
+  final notes = json['notes']?.toString() ?? '';
+  for (final line in notes.split('\n')) {
+    final trimmed = line.trim();
+    if (trimmed.toLowerCase().startsWith('location:')) {
+      fromNotes = trimmed.substring('location:'.length).trim();
+    }
+  }
+
+  final parts = <String>[];
+  void add(String? value) {
+    if (value == null || value.isEmpty) return;
+    if (parts.any((part) => part.toLowerCase() == value.toLowerCase())) return;
+    parts.add(value);
+  }
+
+  add(venue);
+  add(explicit);
+  add(direct);
+  add(fromNotes);
+  if (parts.isEmpty) return 'Location pending';
+  return parts.join(', ');
 }
