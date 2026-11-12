@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../network/api_response.dart';
 import '../ui_states/utils/error_message_mapper.dart';
 import 'package:flutter/material.dart';
@@ -69,6 +71,7 @@ class AppState extends ChangeNotifier {
   List<CancellationTier> _cancellationTiers = [];
   List<PolicySection> _policySections = [];
   final Map<String, List<ChatMessageModel>> _messagesByConversation = {};
+  final Set<String> _loadingMessageThreads = {};
 
   bool _isLoadingInitial = true;
   bool _isLoadingVendors = false;
@@ -289,7 +292,11 @@ class AppState extends ChangeNotifier {
       final popularServicesFuture = _repository.getPopularServices();
       final profileFuture = _repository.getUserProfile();
       final bookingsFuture = _repository.getBookings();
-      final conversationsFuture = _repository.getConversations();
+      final conversationsFuture = _repository.getConversations().catchError((Object e) {
+        _chatError = ErrorMessageMapper.map(e);
+        debugPrint('[AppState conversations] $e');
+        return <ChatConversationModel>[];
+      });
       final trendingFuture = _repository.getTrendingVendors();
       final nearbyFuture = _repository.getNearbyVendors();
 
@@ -369,12 +376,15 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> refreshConversations() async {
-    _isLoadingChat = true;
-    _chatError = null;
-    notifyListeners();
+  Future<void> refreshConversations({bool silent = false}) async {
+    if (!silent) {
+      _isLoadingChat = true;
+      _chatError = null;
+      notifyListeners();
+    }
     try {
-      _conversations = await _repository.getConversations();
+      final remote = await _repository.getConversations();
+      _conversations = _mergeUnsentThreads(remote);
       _chatError = null;
     } catch (e) {
       _chatError = ErrorMessageMapper.map(e);
@@ -383,6 +393,14 @@ class AppState extends ChangeNotifier {
       _isLoadingChat = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshAfterAuth() async {
+    await Future.wait([
+      refreshProfile(),
+      refreshBookings(),
+      refreshConversations(),
+    ]);
   }
 
   Future<void> refreshProfile() async {
@@ -466,20 +484,44 @@ class AppState extends ChangeNotifier {
     }).toList(growable: false);
   }
 
-  List<ChatMessageModel> messagesFor(String conversationId) {
-    if (_messagesByConversation.containsKey(conversationId)) {
-      return List.unmodifiable(_messagesByConversation[conversationId]!);
-    }
+  bool isLoadingMessages(String conversationId) => _loadingMessageThreads.contains(conversationId);
 
-    // Trigger async load
-    _fetchMessagesAsync(conversationId);
-    return const [];
+  List<ChatMessageModel> messagesFor(String conversationId) {
+    return List.unmodifiable(_messagesByConversation[conversationId] ?? const <ChatMessageModel>[]);
   }
 
-  Future<void> _fetchMessagesAsync(String conversationId) async {
-    final parsedConvId = int.tryParse(conversationId);
-    final msgs = await _repository.getMessages(conversationId, vendorId: parsedConvId);
-    _messagesByConversation[conversationId] = msgs;
+  Future<bool> refreshMessages(String conversationId, {int? vendorId}) async {
+    final partyId = vendorId ?? int.tryParse(conversationId);
+    final firstLoad = !_messagesByConversation.containsKey(conversationId);
+    if (firstLoad) {
+      _loadingMessageThreads.add(conversationId);
+      notifyListeners();
+    }
+    try {
+      final msgs = await _repository.getMessages(conversationId, vendorId: partyId);
+      _messagesByConversation[conversationId] = msgs;
+      return true;
+    } catch (e) {
+      debugPrint('[AppState refreshMessages Error] $e');
+      _messagesByConversation.putIfAbsent(conversationId, () => <ChatMessageModel>[]);
+      return false;
+    } finally {
+      _loadingMessageThreads.remove(conversationId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> markConversationRead(String conversationId, {int? vendorId}) async {
+    final partyId = vendorId ?? int.tryParse(conversationId);
+    if (partyId == null) return;
+    final ok = await _repository.markConversationRead(vendorProfileId: partyId);
+    if (!ok) return;
+    _conversations = _conversations.map((conversation) {
+      if (conversation.id != conversationId && conversation.vendorId != partyId.toString()) {
+        return conversation;
+      }
+      return conversation.copyWith(unreadCount: 0);
+    }).toList(growable: false);
     notifyListeners();
   }
 
@@ -791,33 +833,61 @@ class AppState extends ChangeNotifier {
   }
 
   ChatConversationModel conversationForVendor(VendorModel vendor) {
-    final existing = _conversations.where((conversation) => conversation.vendorId == vendor.id);
-    if (existing.isNotEmpty) return existing.first;
-
-    final conversation = ChatConversationModel(
-      id: 'c_${_conversations.length + 1}',
+    return openConversationWithVendor(
       vendorId: vendor.id,
       vendorName: vendor.name,
       vendorCategory: vendor.category,
-      lastMessage: 'Conversation started with ${vendor.name}.',
+      avatarUrl: vendor.imageUrl,
+    );
+  }
+
+  /// Opens the thread for a vendor profile id. The id is the vendor profile id
+  /// the chat API expects as `otherPartyId` / `recipientVendorProfileId`.
+  ChatConversationModel openConversationWithVendor({
+    required String vendorId,
+    required String vendorName,
+    String vendorCategory = 'Wedding Services',
+    String avatarUrl = '',
+  }) {
+    final index = _conversations.indexWhere(
+      (conversation) => conversation.vendorId == vendorId || conversation.id == vendorId,
+    );
+    if (index >= 0) {
+      final existing = _conversations[index];
+      if (existing.id == vendorId) return existing;
+      final fixed = existing.copyWith(id: vendorId, vendorId: vendorId);
+      final updated = List<ChatConversationModel>.of(_conversations);
+      updated[index] = fixed;
+      final moved = _messagesByConversation.remove(existing.id);
+      if (moved != null) _messagesByConversation[vendorId] = moved;
+      _conversations = updated;
+      notifyListeners();
+      return fixed;
+    }
+
+    final conversation = ChatConversationModel(
+      id: vendorId,
+      vendorId: vendorId,
+      vendorName: vendorName.isEmpty ? 'Vendor' : vendorName,
+      vendorCategory: vendorCategory,
+      lastMessage: 'Say hello to ${vendorName.isEmpty ? 'this vendor' : vendorName}',
       time: 'Now',
       unreadCount: 0,
-      avatarUrl: vendor.imageUrl,
+      avatarUrl: avatarUrl,
     );
     _conversations = [conversation, ..._conversations];
     notifyListeners();
     return conversation;
   }
 
-  Future<void> sendMessage(String conversationId, String text, {int? vendorId}) async {
+  Future<bool> sendMessage(String conversationId, String text, {int? vendorId}) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return false;
 
-    final parsedConvId = int.tryParse(conversationId);
+    final partyId = vendorId ?? int.tryParse(conversationId);
     final messages = List<ChatMessageModel>.of(_messagesByConversation[conversationId] ?? []);
-
     final localMsg = ChatMessageModel(
-      id: '${conversationId}_m${messages.length + 1}',
+      id: 'local_${DateTime.now().microsecondsSinceEpoch}',
       conversationId: conversationId,
       text: trimmed,
       time: 'Now',
@@ -825,23 +895,56 @@ class AppState extends ChangeNotifier {
     );
     messages.add(localMsg);
     _messagesByConversation[conversationId] = messages;
+    _touchConversation(conversationId, trimmed);
+    notifyListeners();
 
+    final sent = await _repository.sendMessage(
+      conversationId: partyId,
+      vendorId: partyId,
+      text: trimmed,
+    );
+    if (sent == null) {
+      _messagesByConversation[conversationId] = messages.where((m) => m.id != localMsg.id).toList();
+      notifyListeners();
+      return false;
+    }
+
+    final loaded = await refreshMessages(conversationId, vendorId: partyId);
+    final current = List<ChatMessageModel>.of(_messagesByConversation[conversationId] ?? const []);
+    final alreadyOnServer = current.any((m) => m.isMine && m.text == trimmed && !m.id.startsWith('local_'));
+    if (loaded && !alreadyOnServer) {
+      current.add(sent);
+      _messagesByConversation[conversationId] = current;
+    }
+    _touchConversation(conversationId, trimmed);
+    notifyListeners();
+    unawaited(refreshConversations(silent: true));
+    return true;
+  }
+
+  void _touchConversation(String conversationId, String lastMessage) {
     _conversations = _conversations.map((conversation) {
       if (conversation.id != conversationId) return conversation;
       return conversation.copyWith(
-        lastMessage: trimmed,
+        lastMessage: lastMessage,
         time: 'Now',
         unreadCount: 0,
       );
     }).toList(growable: false);
-    notifyListeners();
+  }
 
-    // Send to backend API
-    await _repository.sendMessage(
-      conversationId: parsedConvId,
-      vendorId: vendorId,
-      text: trimmed,
-    );
+  List<ChatConversationModel> _mergeUnsentThreads(List<ChatConversationModel> remote) {
+    final remoteKeys = remote.expand((c) => [c.id, c.vendorId]).toSet();
+    final localOnly = _conversations.where((conversation) {
+      final numeric = int.tryParse(conversation.vendorId) != null;
+      if (!numeric) return false;
+      if (remoteKeys.contains(conversation.id) || remoteKeys.contains(conversation.vendorId)) return false;
+      final localMessages = _messagesByConversation[conversation.id];
+      final waitingToSend = localMessages != null && localMessages.isNotEmpty;
+      final openedDraft = conversation.lastMessage.startsWith('Say hello');
+      return waitingToSend || openedDraft;
+    });
+    return [...localOnly, ...remote];
   }
 
   bool _matchesQuery(VendorModel vendor, String query) {

@@ -76,7 +76,7 @@ class ChatConversationModel {
       vendorCategory: category,
       lastMessage: json['lastMessage']?.toString() ?? 'Start conversation...',
       time: displayTime,
-      unreadCount: json['unreadCount'] as int? ?? 0,
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? int.tryParse('${json['unreadCount']}') ?? 0,
       avatarUrl: avatar.isNotEmpty
           ? avatar
           : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',

@@ -354,6 +354,49 @@ class ApiService {
     }
   }
 
+  Future<ApiResponse<T>> patch<T>({
+    required String url,
+    dynamic body,
+    T Function(dynamic json)? fromJsonT,
+    bool requiresAuth = true,
+  }) async {
+    Timer? slowTimer;
+    try {
+      final uri = Uri.parse(url);
+      final encodedBody = body != null ? json.encode(body) : null;
+
+      debugPrint('[API PATCH] $uri | Body: $encodedBody');
+
+      slowTimer = Timer(slowRequestThreshold, () {
+        NetworkStateHandler.instance.setSlowNetwork(true);
+      });
+
+      final sent = await _send(
+        requiresAuth: requiresAuth,
+        call: (headers) => _client.patch(uri, headers: headers, body: encodedBody).timeout(_timeout),
+      );
+
+      NetworkStateHandler.instance.setSlowNetwork(false);
+      NetworkStateHandler.instance.setConnectivity(true);
+      return _handleResponse<T>(sent.response, fromJsonT, sessionExpired: sent.sessionExpired);
+    } on TimeoutException {
+      debugPrint('[API PATCH Timeout] $url');
+      NetworkStateHandler.instance.setSlowNetwork(false);
+      return ApiResponse<T>.fail('Connection timed out. Please try again.', 'Request Timeout', 408);
+    } on SocketException catch (e) {
+      debugPrint('[API PATCH SocketException] $url: $e');
+      NetworkStateHandler.instance.setSlowNetwork(false);
+      NetworkStateHandler.instance.setConnectivity(false);
+      return ApiResponse<T>.fail('Unable to connect to server. Please check your connection.', 'No Internet', 0);
+    } catch (e) {
+      debugPrint('[API PATCH Error] $url: $e');
+      NetworkStateHandler.instance.setSlowNetwork(false);
+      return ApiResponse<T>.fail(ErrorMessageMapper.map(e), 'Request Failed');
+    } finally {
+      slowTimer?.cancel();
+    }
+  }
+
   Future<ApiResponse<T>> delete<T>({
     required String url,
     T Function(dynamic json)? fromJsonT,

@@ -335,10 +335,16 @@ class _BookingCard extends StatelessWidget {
                   ),
                   ElevatedButton.icon(
                     onPressed: () {
+                      if (booking.vendorId.isEmpty) return;
                       final vendor = appState.vendorById(booking.vendorId);
                       final conversation = vendor != null
                           ? appState.conversationForVendor(vendor)
-                          : appState.filteredConversations.first;
+                          : appState.openConversationWithVendor(
+                              vendorId: booking.vendorId,
+                              vendorName: booking.title,
+                              vendorCategory: booking.category,
+                              avatarUrl: booking.imageUrl,
+                            );
 
                       Navigator.push(
                         context,

@@ -15,6 +15,7 @@ import 'core/services/fcm_notification_service.dart';
 import 'core/state/app_state.dart';
 import 'core/state/app_state_scope.dart';
 import 'core/theme/app_theme.dart';
+import 'features/chat/views/chat_detail_screen.dart';
 import 'features/splash/views/splash_screen.dart';
 import 'firebase_options.dart';
 
@@ -56,6 +57,7 @@ class _OneDestinyAppState extends State<OneDestinyApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final AppState _appState;
   StreamSubscription<void>? _sessionSubscription;
+  StreamSubscription<FcmPush>? _pushSubscription;
 
   @override
   void initState() {
@@ -68,6 +70,36 @@ class _OneDestinyAppState extends State<OneDestinyApp> {
     _sessionSubscription = NetworkStateHandler.instance.sessionExpiredStream.listen((_) async {
       await AuthStorageService.instance.clearAuth();
       _handleSessionExpired();
+    });
+    _pushSubscription = FcmNotificationService.instance.listen(_handlePush);
+  }
+
+  void _handlePush(FcmPush push) {
+    if (push.type == 'chat' || push.type == 'booking' || push.type == 'lead') {
+      if (push.type == 'chat') {
+        final vendorId = push.data['vendorProfileId'];
+        _appState.refreshConversations(silent: true);
+        if (vendorId != null && vendorId.isNotEmpty) {
+          _appState.refreshMessages(vendorId, vendorId: int.tryParse(vendorId));
+        }
+      } else {
+        _appState.refreshBookings();
+      }
+    }
+    if (!push.opened || push.type != 'chat') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final vendorId = push.data['vendorProfileId'] ?? '';
+      if (vendorId.isEmpty) return;
+      final conversation = _appState.openConversationWithVendor(
+        vendorId: vendorId,
+        vendorName: push.data['senderName'] ?? push.title ?? 'Vendor',
+      );
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => ChatDetailScreen(conversationId: conversation.id),
+        ),
+      );
     });
   }
 
@@ -122,6 +154,7 @@ class _OneDestinyAppState extends State<OneDestinyApp> {
   @override
   void dispose() {
     _sessionSubscription?.cancel();
+    _pushSubscription?.cancel();
     _themeModeNotifier.dispose();
     _appState.dispose();
     super.dispose();

@@ -104,8 +104,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          await AppStateScope.read(context).refreshProfile();
-          await AppStateScope.read(context).refreshBookings();
+          await AppStateScope.read(context).refreshAfterAuth();
           await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
@@ -121,8 +120,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          await AppStateScope.read(context).refreshProfile();
-          await AppStateScope.read(context).refreshBookings();
+          await AppStateScope.read(context).refreshAfterAuth();
           await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
@@ -138,8 +136,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          await AppStateScope.read(context).refreshProfile();
-          await AppStateScope.read(context).refreshBookings();
+          await AppStateScope.read(context).refreshAfterAuth();
           await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));
@@ -151,8 +148,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _loading = false);
 
         if (res.success) {
-          await AppStateScope.read(context).refreshProfile();
-          await AppStateScope.read(context).refreshBookings();
+          await AppStateScope.read(context).refreshAfterAuth();
           await _handlePostOtpNavigation(res.data);
         } else {
           _showSnack(res.errors.isNotEmpty ? res.errors.first : (res.message.isNotEmpty ? res.message : 'Invalid OTP code.'));

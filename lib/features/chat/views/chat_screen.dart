@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../core/ui_states/ui_states.dart';
 import 'package:flutter/material.dart';
 
@@ -21,8 +23,40 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMixin {
+  Timer? _poll;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppStateScope.read(context).refreshConversations();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible && _poll == null) {
+      _poll = Timer.periodic(const Duration(seconds: 8), (_) {
+        if (!mounted) return;
+        AppStateScope.read(context).refreshConversations(silent: true);
+      });
+    } else if (!visible) {
+      _poll?.cancel();
+      _poll = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +87,7 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
                 onRefresh: () => appState.refreshConversations(),
                 child: Builder(
                   builder: (context) {
-                    if (appState.isLoadingChat) {
+                    if ((appState.isLoadingChat || appState.isLoadingInitial) && conversations.isEmpty) {
                       return SingleChildScrollView(
                         physics: const NeverScrollableScrollPhysics(),
                         child: SkeletonLoaderCard.conversationList(count: 5),
@@ -92,6 +126,31 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ChatAvatar extends StatelessWidget {
+  final String url;
+  final double size;
+
+  const _ChatAvatar({required this.url, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = ColoredBox(
+      color: AppColors.accentGold.withValues(alpha: 0.2),
+      child: Icon(Icons.storefront_rounded, size: size * 0.46, color: AppColors.accentGold),
+    );
+    if (url.isEmpty) {
+      return SizedBox(width: size, height: size, child: fallback);
+    }
+    return Image.network(
+      url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => SizedBox(width: size, height: size, child: fallback),
     );
   }
 }
@@ -142,12 +201,7 @@ class _ConversationTile extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    item.avatarUrl,
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _ChatAvatar(url: item.avatarUrl, size: 52),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

@@ -239,10 +239,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             if (isAcceptedOrConfirmed)
               ElevatedButton.icon(
                 onPressed: () {
+                  if (_currentBooking.vendorId.isEmpty) return;
                   final vendor = appState.vendorById(_currentBooking.vendorId);
                   final conversation = vendor != null
                       ? appState.conversationForVendor(vendor)
-                      : appState.filteredConversations.first;
+                      : appState.openConversationWithVendor(
+                          vendorId: _currentBooking.vendorId,
+                          vendorName: _currentBooking.title,
+                          vendorCategory: _currentBooking.category,
+                          avatarUrl: _currentBooking.imageUrl,
+                        );
 
                   Navigator.push(
                     context,

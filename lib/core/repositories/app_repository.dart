@@ -72,6 +72,7 @@ abstract class AppRepository {
     int? vendorId,
     required String text,
   });
+  Future<bool> markConversationRead({required int vendorProfileId});
   Future<UserProfileModel> getUserProfile();
   Future<ApiResponse<UserProfileModel>> updateUserProfile({
     required String name,
@@ -471,25 +472,21 @@ class ApiAppRepository implements AppRepository {
 
   @override
   Future<List<ChatConversationModel>> getConversations() async {
-    try {
-      final res = await ApiService.instance.get<List<ChatConversationModel>>(
-        url: ApiConfig.chatConversations,
-        fromJsonT: (json) {
-          if (json is List) {
-            return json.map((e) => ChatConversationModel.fromJson(e as Map<String, dynamic>)).toList();
-          }
-          return <ChatConversationModel>[];
-        },
-        requiresAuth: true,
-      );
+    final res = await ApiService.instance.get<List<ChatConversationModel>>(
+      url: ApiConfig.chatConversations,
+      fromJsonT: (json) {
+        if (json is List) {
+          return json.map((e) => ChatConversationModel.fromJson(e as Map<String, dynamic>)).toList();
+        }
+        return <ChatConversationModel>[];
+      },
+      requiresAuth: true,
+    );
 
-      if (res.success && res.data != null) {
-        return res.data!;
-      }
-    } catch (e) {
-      debugPrint('[ApiAppRepository getConversations Error] $e');
+    if (res.success) {
+      return res.data ?? <ChatConversationModel>[];
     }
-    return [];
+    throw Exception(res.message.isNotEmpty ? res.message : 'Could not load conversations.');
   }
 
   @override
@@ -502,6 +499,8 @@ class ApiAppRepository implements AppRepository {
       if (partyId != null) {
         queryParams['otherPartyId'] = partyId.toString();
       }
+      queryParams['page'] = '1';
+      queryParams['pageSize'] = '100';
 
       final res = await ApiService.instance.get<List<ChatMessageModel>>(
         url: ApiConfig.chatMessages,
@@ -550,10 +549,26 @@ class ApiAppRepository implements AppRepository {
       if (res.success && res.data != null) {
         return res.data;
       }
+      debugPrint('[ApiAppRepository sendMessage] ${res.message}');
     } catch (e) {
       debugPrint('[ApiAppRepository sendMessage Error] $e');
     }
     return null;
+  }
+
+  @override
+  Future<bool> markConversationRead({required int vendorProfileId}) async {
+    try {
+      final res = await ApiService.instance.patch(
+        url: ApiConfig.chatRead,
+        body: {'vendorProfileId': vendorProfileId},
+        requiresAuth: true,
+      );
+      return res.success;
+    } catch (e) {
+      debugPrint('[ApiAppRepository markConversationRead Error] $e');
+      return false;
+    }
   }
 
   @override
@@ -882,12 +897,15 @@ class MockAppRepository implements AppRepository {
   }) async {
     return ChatMessageModel(
       id: 'm_${DateTime.now().millisecondsSinceEpoch}',
-      conversationId: conversationId?.toString() ?? 'c_1',
+      conversationId: conversationId?.toString() ?? vendorId?.toString() ?? 'c_1',
       text: text,
       time: 'Now',
       isMine: true,
     );
   }
+
+  @override
+  Future<bool> markConversationRead({required int vendorProfileId}) async => true;
 
   @override
   Future<UserProfileModel> getUserProfile() async {

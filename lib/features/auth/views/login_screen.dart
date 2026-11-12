@@ -211,8 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res.success) {
         // Refresh app state with user profile
-        await AppStateScope.read(context).refreshProfile();
-        await AppStateScope.read(context).refreshBookings();
+        await AppStateScope.read(context).refreshAfterAuth();
         _handlePostLoginNavigation(res.data);
       } else {
         _showSnack(res.errors.isNotEmpty

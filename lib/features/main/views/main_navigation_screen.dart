@@ -77,6 +77,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
     );
   }
 
+  void _refreshTab(int index) {
+    if (index == 3) {
+      AppStateScope.read(context).refreshConversations(silent: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
@@ -100,6 +106,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Single
           setState(() {
             _currentIndex = index;
           });
+          _refreshTab(index);
         },
         children: _screens,
       ),
